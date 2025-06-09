@@ -24,7 +24,8 @@ import structlog
 from config import settings
 from schemas import (
     ParseRequest, ParsedQuery, SearchRequest, SearchResponse, 
-    HealthCheck, ErrorResponse, SearchFilters, PropertyListing
+    HealthCheck, ErrorResponse, SearchFilters, PropertyListing,
+    SearchPipelineRequest, SearchPipelineResponse, SortBy, SortOrder
 )
 from nlu_parser import NLUParser
 from cache_manager import cache_manager
@@ -438,6 +439,185 @@ async def search_properties(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to perform search"
+        )
+
+
+@app.post("/search_pipeline", response_model=SearchPipelineResponse)
+async def search_pipeline(
+    request: SearchPipelineRequest,
+    _rate_limit: bool = Depends(check_rate_limit("search_pipeline", settings.SEARCH_RATE_LIMIT))
+):
+    """
+    Complete search pipeline: parse query then search properties.
+    
+    This endpoint combines the parsing and search functionality into a single
+    convenient endpoint that accepts natural language queries and returns
+    both the parsed query structure and matching property listings.
+    """
+    service_metrics['parse_requests'] += 1
+    service_metrics['search_requests'] += 1
+    start_time = time.time()
+    
+    try:
+        # Step 1: Parse the query
+        parse_start = time.time()
+        
+        # Check parse cache first
+        parse_cache_key = hashlib.sha256(request.q.encode()).hexdigest()[:16]
+        cached_parse = await cache_manager.get_parsed_query(parse_cache_key)
+        
+        if cached_parse:
+            service_metrics['cache_hits'] += 1
+            parsed_query = ParsedQuery(**cached_parse['parsed_data'])
+        else:
+            service_metrics['cache_misses'] += 1
+            parsed_query = nlu_parser.parse_query(request.q)
+            await cache_manager.set_parsed_query(request.q, parsed_query.model_dump())
+        
+        parse_time = (time.time() - parse_start) * 1000
+        
+        # Step 2: Convert parsed query to search filters
+        search_filters = SearchFilters()
+        
+        # Map parsed query fields to search filters
+        if parsed_query.beds is not None:
+            search_filters.beds = parsed_query.beds
+        if parsed_query.beds_min is not None:
+            search_filters.beds_min = parsed_query.beds_min
+        if parsed_query.beds_max is not None:
+            search_filters.beds_max = parsed_query.beds_max
+            
+        if parsed_query.baths is not None:
+            search_filters.baths = parsed_query.baths
+        if parsed_query.baths_min is not None:
+            search_filters.baths_min = parsed_query.baths_min
+        if parsed_query.baths_max is not None:
+            search_filters.baths_max = parsed_query.baths_max
+            
+        if parsed_query.min_price is not None:
+            search_filters.price_min = parsed_query.min_price
+        if parsed_query.max_price is not None:
+            search_filters.price_max = parsed_query.max_price
+            
+        if parsed_query.property_type is not None:
+            search_filters.property_type = parsed_query.property_type
+            
+        if parsed_query.city is not None:
+            search_filters.city = parsed_query.city
+            
+        if parsed_query.neighborhoods:
+            search_filters.neighborhoods = parsed_query.neighborhoods
+            
+        if parsed_query.has_parking is not None:
+            search_filters.has_parking = parsed_query.has_parking
+        if parsed_query.has_pets is not None:
+            search_filters.has_pets = parsed_query.has_pets
+        if parsed_query.has_furnished is not None:
+            search_filters.has_furnished = parsed_query.has_furnished
+            
+        if parsed_query.keywords:
+            search_filters.keywords = parsed_query.keywords
+        
+        # Step 3: Perform the search
+        search_start = time.time()
+        
+        # Create search request
+        search_request = SearchRequest(
+            filters=search_filters,
+            limit=request.limit,
+            offset=0,
+            sort_by=SortBy.RELEVANCE,
+            sort_order=SortOrder.DESC,
+            include_score=True
+        )
+        
+        # Check search cache
+        search_cache_key = hashlib.sha256(
+            search_request.model_dump_json().encode()
+        ).hexdigest()[:16]
+        
+        cached_search = await cache_manager.get_search_results(search_cache_key)
+        if cached_search:
+            service_metrics['cache_hits'] += 1
+            search_response = SearchResponse(**cached_search)
+        else:
+            service_metrics['cache_misses'] += 1
+            
+            # Perform actual search
+            results, total_count, query_time = await opensearch_client.search_properties(
+                filters=search_filters,
+                limit=request.limit,
+                offset=0,
+                sort_by=SortBy.RELEVANCE.value,
+                sort_order=SortOrder.DESC.value
+            )
+            
+            # Convert results to PropertyListing objects
+            property_listings = []
+            for result in results:
+                try:
+                    if all(field in result for field in ['id', 'price', 'beds', 'baths', 'location', 'address', 'city', 'property_type', 'title', 'date_added']):
+                        listing = PropertyListing(**result)
+                        property_listings.append(listing)
+                except Exception as e:
+                    logger.warning(f"Error converting search result to PropertyListing: {e}")
+                    continue
+            
+            search_response = SearchResponse(
+                results=property_listings,
+                total=total_count,
+                limit=request.limit,
+                offset=0,
+                query_time_ms=query_time,
+                filters_applied=search_filters
+            )
+            
+            # Cache search results
+            await cache_manager.set_search_results(search_cache_key, search_response.model_dump())
+        
+        search_time = (time.time() - search_start) * 1000
+        total_time = (time.time() - start_time) * 1000
+        
+        # Build pipeline response
+        pipeline_response = SearchPipelineResponse(
+            query=request.q,
+            parse=parsed_query if request.include_parse_details else None,
+            listings=search_response.results,
+            total=search_response.total,
+            limit=request.limit,
+            parse_time_ms=parse_time,
+            search_time_ms=search_time,
+            total_time_ms=total_time
+        )
+        
+        logger.info(
+            "Search pipeline completed successfully",
+            query=request.q[:50] + "..." if len(request.q) > 50 else request.q,
+            parse_confidence=parsed_query.confidence,
+            results_count=len(search_response.results),
+            total_matches=search_response.total,
+            parse_time_ms=parse_time,
+            search_time_ms=search_time,
+            total_time_ms=total_time
+        )
+        
+        return pipeline_response
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(
+            "Error in search pipeline",
+            query=request.q,
+            error=str(e),
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to complete search pipeline"
         )
 
 

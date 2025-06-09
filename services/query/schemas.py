@@ -470,6 +470,148 @@ class HealthCheck(BaseModel):
     )
 
 
+class SearchPipelineRequest(BaseModel):
+    """Schema for search pipeline requests."""
+    
+    q: str = Field(
+        ...,
+        description="Natural language query to parse and search",
+        min_length=1,
+        max_length=500,
+        examples=[
+            "3 bedroom house under $600k in Denver",
+            "2 bed apartment near downtown with parking",
+            "condo with 2+ baths under $400000"
+        ]
+    )
+    
+    limit: int = Field(
+        default=10,
+        description="Number of results to return",
+        ge=1,
+        le=100
+    )
+    
+    include_parse_details: bool = Field(
+        default=True,
+        description="Include parsed query details in response"
+    )
+    
+    @field_validator('q')
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        """Validate query using same rules as ParseRequest."""
+        if not v or not v.strip():
+            raise ValueError('Query cannot be empty or whitespace only')
+        
+        # Remove excessive whitespace
+        v = re.sub(r'\s+', ' ', v.strip())
+        
+        # Check for suspicious patterns
+        suspicious_patterns = [
+            r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>',
+            r'javascript:',
+            r'on\w+\s*=',
+            r'(union|select|insert|update|delete|drop)\s+',
+        ]
+        
+        for pattern in suspicious_patterns:
+            if re.search(pattern, v, re.IGNORECASE):
+                raise ValueError('Query contains potentially malicious content')
+        
+        if re.search(r'(.)\1{10,}', v):
+            raise ValueError('Query contains excessive repetitive characters')
+        
+        return v
+
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "example": {
+                "q": "3 bedroom house under $600k in Denver",
+                "limit": 10,
+                "include_parse_details": True
+            }
+        }
+    )
+
+
+class SearchPipelineResponse(BaseModel):
+    """Schema for search pipeline responses."""
+    
+    query: str = Field(..., description="Original query")
+    
+    parse: Optional[ParsedQuery] = Field(
+        None,
+        description="Parsed query details (if include_parse_details=True)"
+    )
+    
+    listings: List[PropertyListing] = Field(
+        default_factory=list,
+        description="Search results"
+    )
+    
+    total: int = Field(
+        default=0,
+        description="Total number of matching results",
+        ge=0
+    )
+    
+    limit: int = Field(..., description="Results limit used")
+    
+    parse_time_ms: float = Field(
+        ...,
+        description="Parse execution time in milliseconds",
+        ge=0
+    )
+    
+    search_time_ms: float = Field(
+        ...,
+        description="Search execution time in milliseconds", 
+        ge=0
+    )
+    
+    total_time_ms: float = Field(
+        ...,
+        description="Total pipeline execution time in milliseconds",
+        ge=0
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "query": "3 bedroom house under $600k in Denver",
+                "parse": {
+                    "beds": 3,
+                    "max_price": 600000,
+                    "city": "Denver",
+                    "property_type": "house",
+                    "confidence": 0.95
+                },
+                "listings": [
+                    {
+                        "id": "listing-123",
+                        "price": 575000,
+                        "beds": 3,
+                        "baths": 2.5,
+                        "location": {"lat": 39.7392, "lon": -104.9903},
+                        "address": "123 Main St",
+                        "city": "Denver",
+                        "property_type": "house",
+                        "title": "Beautiful 3BR House in Denver",
+                        "date_added": "2024-01-01T12:00:00Z"
+                    }
+                ],
+                "total": 45,
+                "limit": 10,
+                "parse_time_ms": 15.2,
+                "search_time_ms": 32.8,
+                "total_time_ms": 48.0
+            }
+        }
+    )
+
+
 class ErrorResponse(BaseModel):
     """Schema for error responses."""
     
