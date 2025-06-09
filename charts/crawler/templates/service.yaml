@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "orbit-crawler.fullname" . }}
+  labels:
+    {{- include "orbit-crawler.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+    {{- if .Values.env.CRAWLER_ENABLE_METRICS }}
+    - port: {{ .Values.env.CRAWLER_METRICS_PORT | default 8001 }}
+      targetPort: {{ .Values.env.CRAWLER_METRICS_PORT | default 8001 }}
+      protocol: TCP
+      name: metrics
+    {{- end }}
+  selector:
+    {{- include "orbit-crawler.selectorLabels" . | nindent 4 }} 

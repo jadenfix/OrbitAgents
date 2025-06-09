@@ -1,0 +1,339 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orbit-crawler.fullname" . }}
+  labels:
+    {{- include "orbit-crawler.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "orbit-crawler.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "orbit-crawler.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "orbit-crawler.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+            {{- if .Values.env.CRAWLER_ENABLE_METRICS }}
+            - name: metrics
+              containerPort: {{ .Values.env.CRAWLER_METRICS_PORT | default 8001 }}
+              protocol: TCP
+            {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            # Service Configuration
+            - name: CRAWLER_SERVICE_NAME
+              value: {{ .Values.env.CRAWLER_SERVICE_NAME | quote }}
+            - name: CRAWLER_ENVIRONMENT
+              value: {{ .Values.env.CRAWLER_ENVIRONMENT | quote }}
+            - name: CRAWLER_DEBUG
+              value: {{ .Values.env.CRAWLER_DEBUG | quote }}
+            - name: CRAWLER_LOG_LEVEL
+              value: {{ .Values.env.CRAWLER_LOG_LEVEL | quote }}
+            
+            # MLS API Configuration
+            - name: CRAWLER_MLS_API_URL
+              value: {{ .Values.env.CRAWLER_MLS_API_URL | quote }}
+            - name: CRAWLER_MLS_TIMEOUT
+              value: {{ .Values.env.CRAWLER_MLS_TIMEOUT | quote }}
+            - name: CRAWLER_MLS_RETRY_ATTEMPTS
+              value: {{ .Values.env.CRAWLER_MLS_RETRY_ATTEMPTS | quote }}
+            - name: CRAWLER_MLS_RETRY_DELAY
+              value: {{ .Values.env.CRAWLER_MLS_RETRY_DELAY | quote }}
+            {{- if .Values.secrets.mls.create }}
+            - name: CRAWLER_MLS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-mls
+                  key: {{ .Values.secrets.mls.apiKeyKey }}
+            {{- else if .Values.secrets.mls.existingSecret }}
+            - name: CRAWLER_MLS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.mls.existingSecret }}
+                  key: {{ .Values.secrets.mls.apiKeyKey }}
+            {{- end }}
+            
+            # Scheduling Configuration
+            - name: CRAWLER_CRAWLER_CRON
+              value: {{ .Values.env.CRAWLER_CRAWLER_CRON | quote }}
+            - name: CRAWLER_ENABLE_SCHEDULER
+              value: "false"  # Disable in API service, enable in scheduler job
+            
+            # Data Processing Configuration
+            - name: CRAWLER_BATCH_SIZE
+              value: {{ .Values.env.CRAWLER_BATCH_SIZE | quote }}
+            - name: CRAWLER_MAX_LISTINGS_PER_RUN
+              value: {{ .Values.env.CRAWLER_MAX_LISTINGS_PER_RUN | quote }}
+            - name: CRAWLER_ENABLE_DATA_VALIDATION
+              value: {{ .Values.env.CRAWLER_ENABLE_DATA_VALIDATION | quote }}
+            
+            # Error Handling Configuration
+            - name: CRAWLER_MAX_CONSECUTIVE_FAILURES
+              value: {{ .Values.env.CRAWLER_MAX_CONSECUTIVE_FAILURES | quote }}
+            - name: CRAWLER_FAILURE_COOLDOWN_MINUTES
+              value: {{ .Values.env.CRAWLER_FAILURE_COOLDOWN_MINUTES | quote }}
+            
+            # Monitoring Configuration
+            - name: CRAWLER_ENABLE_METRICS
+              value: {{ .Values.env.CRAWLER_ENABLE_METRICS | quote }}
+            - name: CRAWLER_METRICS_PORT
+              value: {{ .Values.env.CRAWLER_METRICS_PORT | quote }}
+            - name: CRAWLER_HEALTH_CHECK_TIMEOUT
+              value: {{ .Values.env.CRAWLER_HEALTH_CHECK_TIMEOUT | quote }}
+            
+            # PostgreSQL Configuration
+            {{- if .Values.secrets.postgres.create }}
+            - name: CRAWLER_POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-postgres
+                  key: {{ .Values.secrets.postgres.hostKey }}
+            - name: CRAWLER_POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-postgres
+                  key: {{ .Values.secrets.postgres.portKey }}
+            - name: CRAWLER_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-postgres
+                  key: {{ .Values.secrets.postgres.databaseKey }}
+            - name: CRAWLER_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-postgres
+                  key: {{ .Values.secrets.postgres.usernameKey }}
+            - name: CRAWLER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-postgres
+                  key: {{ .Values.secrets.postgres.passwordKey }}
+            {{- else if .Values.secrets.postgres.existingSecret }}
+            - name: CRAWLER_POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgres.existingSecret }}
+                  key: {{ .Values.secrets.postgres.hostKey }}
+            - name: CRAWLER_POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgres.existingSecret }}
+                  key: {{ .Values.secrets.postgres.portKey }}
+            - name: CRAWLER_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgres.existingSecret }}
+                  key: {{ .Values.secrets.postgres.databaseKey }}
+            - name: CRAWLER_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgres.existingSecret }}
+                  key: {{ .Values.secrets.postgres.usernameKey }}
+            - name: CRAWLER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.postgres.existingSecret }}
+                  key: {{ .Values.secrets.postgres.passwordKey }}
+            {{- end }}
+            
+            # S3 Configuration
+            {{- if .Values.secrets.s3.create }}
+            - name: CRAWLER_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-s3
+                  key: {{ .Values.secrets.s3.bucketKey }}
+            - name: CRAWLER_S3_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-s3
+                  key: {{ .Values.secrets.s3.regionKey }}
+            {{- if .Values.secrets.s3.accessKeyId }}
+            - name: CRAWLER_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-s3
+                  key: {{ .Values.secrets.s3.accessKeyIdKey }}
+            - name: CRAWLER_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-s3
+                  key: {{ .Values.secrets.s3.secretAccessKeyKey }}
+            {{- end }}
+            {{- if .Values.secrets.s3.endpointUrl }}
+            - name: CRAWLER_S3_ENDPOINT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-s3
+                  key: {{ .Values.secrets.s3.endpointUrlKey }}
+            {{- end }}
+            {{- else if .Values.secrets.s3.existingSecret }}
+            - name: CRAWLER_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.s3.existingSecret }}
+                  key: {{ .Values.secrets.s3.bucketKey }}
+            - name: CRAWLER_S3_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.s3.existingSecret }}
+                  key: {{ .Values.secrets.s3.regionKey }}
+            - name: CRAWLER_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.s3.existingSecret }}
+                  key: {{ .Values.secrets.s3.accessKeyIdKey }}
+            - name: CRAWLER_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.s3.existingSecret }}
+                  key: {{ .Values.secrets.s3.secretAccessKeyKey }}
+            {{- end }}
+            
+            # OpenSearch Configuration
+            {{- if .Values.secrets.opensearch.create }}
+            - name: CRAWLER_OPENSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-opensearch
+                  key: {{ .Values.secrets.opensearch.hostKey }}
+            - name: CRAWLER_OPENSEARCH_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-opensearch
+                  key: {{ .Values.secrets.opensearch.portKey }}
+            - name: CRAWLER_OPENSEARCH_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-opensearch
+                  key: {{ .Values.secrets.opensearch.indexKey }}
+            {{- if .Values.secrets.opensearch.username }}
+            - name: CRAWLER_OPENSEARCH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-opensearch
+                  key: {{ .Values.secrets.opensearch.usernameKey }}
+            - name: CRAWLER_OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-opensearch
+                  key: {{ .Values.secrets.opensearch.passwordKey }}
+            {{- end }}
+            {{- else if .Values.secrets.opensearch.existingSecret }}
+            - name: CRAWLER_OPENSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.opensearch.existingSecret }}
+                  key: {{ .Values.secrets.opensearch.hostKey }}
+            - name: CRAWLER_OPENSEARCH_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.opensearch.existingSecret }}
+                  key: {{ .Values.secrets.opensearch.portKey }}
+            - name: CRAWLER_OPENSEARCH_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.opensearch.existingSecret }}
+                  key: {{ .Values.secrets.opensearch.indexKey }}
+            {{- end }}
+            
+            # Redis Configuration
+            {{- if .Values.secrets.redis.create }}
+            - name: CRAWLER_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-redis
+                  key: {{ .Values.secrets.redis.hostKey }}
+            - name: CRAWLER_REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-redis
+                  key: {{ .Values.secrets.redis.portKey }}
+            {{- if .Values.secrets.redis.password }}
+            - name: CRAWLER_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "orbit-crawler.fullname" . }}-redis
+                  key: {{ .Values.secrets.redis.passwordKey }}
+            {{- end }}
+            {{- else if .Values.secrets.redis.existingSecret }}
+            - name: CRAWLER_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.redis.existingSecret }}
+                  key: {{ .Values.secrets.redis.hostKey }}
+            - name: CRAWLER_REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.redis.existingSecret }}
+                  key: {{ .Values.secrets.redis.portKey }}
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "orbit-crawler.fullname" . }}-data
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }} 

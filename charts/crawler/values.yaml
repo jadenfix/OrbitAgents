@@ -1,0 +1,255 @@
+# Default values for orbit-crawler
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: orbit/crawler
+  pullPolicy: IfNotPresent
+  # Override with specific tag
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: crawler.orbit.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment Configuration
+env:
+  # Service Configuration
+  CRAWLER_SERVICE_NAME: "crawler"
+  CRAWLER_ENVIRONMENT: "production"
+  CRAWLER_DEBUG: "false"
+  CRAWLER_LOG_LEVEL: "INFO"
+  
+  # MLS API Configuration
+  CRAWLER_MLS_API_URL: "https://api.example-mls.com/listings"
+  CRAWLER_MLS_TIMEOUT: "30"
+  CRAWLER_MLS_RETRY_ATTEMPTS: "3"
+  CRAWLER_MLS_RETRY_DELAY: "5"
+  
+  # Scheduling Configuration
+  CRAWLER_CRAWLER_CRON: "0 */4 * * *"  # Every 4 hours
+  CRAWLER_ENABLE_SCHEDULER: "true"
+  
+  # Data Processing Configuration
+  CRAWLER_BATCH_SIZE: "100"
+  CRAWLER_MAX_LISTINGS_PER_RUN: "10000"
+  CRAWLER_ENABLE_DATA_VALIDATION: "true"
+  
+  # Error Handling Configuration
+  CRAWLER_MAX_CONSECUTIVE_FAILURES: "5"
+  CRAWLER_FAILURE_COOLDOWN_MINUTES: "30"
+  
+  # Monitoring Configuration
+  CRAWLER_ENABLE_METRICS: "true"
+  CRAWLER_METRICS_PORT: "8001"
+  CRAWLER_HEALTH_CHECK_TIMEOUT: "10"
+
+# Secret Configuration (use existing secrets or create new ones)
+secrets:
+  # Database configuration
+  postgres:
+    # If enabled, create a secret for PostgreSQL connection
+    create: true
+    # Use existing secret instead of creating new one
+    existingSecret: ""
+    # Keys in the secret
+    hostKey: "host"
+    portKey: "port"
+    databaseKey: "database"
+    usernameKey: "username"
+    passwordKey: "password"
+    # Default values if creating new secret
+    host: "postgres-service"
+    port: "5432"
+    database: "orbit_listings"
+    username: "orbit"
+    password: "changeme"
+  
+  # S3 configuration
+  s3:
+    create: true
+    existingSecret: ""
+    bucketKey: "bucket"
+    regionKey: "region"
+    accessKeyIdKey: "access-key-id"
+    secretAccessKeyKey: "secret-access-key"
+    endpointUrlKey: "endpoint-url"
+    bucket: "orbit-mls-data"
+    region: "us-west-2"
+    accessKeyId: ""
+    secretAccessKey: ""
+    endpointUrl: ""
+  
+  # OpenSearch configuration
+  opensearch:
+    create: true
+    existingSecret: ""
+    hostKey: "host"
+    portKey: "port"
+    usernameKey: "username"
+    passwordKey: "password"
+    indexKey: "index"
+    host: "opensearch-service"
+    port: "9200"
+    username: ""
+    password: ""
+    index: "listings_dev"
+  
+  # Redis configuration
+  redis:
+    create: true
+    existingSecret: ""
+    hostKey: "host"
+    portKey: "port"
+    passwordKey: "password"
+    host: "redis-service"
+    port: "6379"
+    password: ""
+  
+  # MLS API configuration
+  mls:
+    create: false
+    existingSecret: ""
+    apiKeyKey: "api-key"
+    apiKey: ""
+
+# Health checks
+healthcheck:
+  enabled: true
+  path: /health
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  path: /health
+  initialDelaySeconds: 60
+  periodSeconds: 60
+  timeoutSeconds: 10
+  failureThreshold: 5
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  path: /health
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Persistent Volume Claims
+persistence:
+  enabled: false
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /app/data
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  labels: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# Network Policy
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+# Job for running the scheduler
+scheduler:
+  enabled: true
+  image:
+    repository: orbit/crawler
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Override command for scheduler
+  command: ["python", "scheduler.py"] 

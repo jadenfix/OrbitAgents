@@ -1,0 +1,26 @@
+apiVersion: v2
+name: orbit-crawler
+description: Orbit MLS Crawler Service - Automated data fetching, processing, and indexing
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - mls
+  - crawler
+  - real-estate
+  - data-processing
+  - opensearch
+  - postgresql
+
+home: https://github.com/jadenfix/OrbitAgents
+sources:
+  - https://github.com/jadenfix/OrbitAgents
+
+maintainers:
+  - name: Orbit Team
+    email: team@orbit.com
+
+annotations:
+  category: Data Processing
+  licenses: MIT 
