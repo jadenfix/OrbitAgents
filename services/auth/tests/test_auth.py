@@ -4,7 +4,7 @@ Unit tests for Auth service endpoints.
 
 import pytest
 from fastapi import status
-import jwt
+from jose import jwt
 from datetime import datetime, timedelta
 
 from config import settings

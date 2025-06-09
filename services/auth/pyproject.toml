@@ -38,6 +38,9 @@ dev = [
     "httpx>=0.25.0",
 ]
 
+[tool.setuptools]
+py-modules = ["main", "config", "database", "models", "schemas"]
+
 [tool.black]
 line-length = 88
 target-version = ['py311']
