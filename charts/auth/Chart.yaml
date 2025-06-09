@@ -1,0 +1,18 @@
+apiVersion: v2
+name: orbit-agents-auth
+description: Authentication service for OrbitAgents platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - auth
+  - authentication
+  - jwt
+  - fastapi
+  - orbitagents
+home: https://github.com/your-org/OrbitAgents
+sources:
+  - https://github.com/your-org/OrbitAgents
+maintainers:
+  - name: OrbitAgents Team
+    email: team@orbitagents.dev 

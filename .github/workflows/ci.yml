@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -7,12 +7,14 @@ on:
     branches: [ main ]
 
 env:
-  AWS_REGION: us-west-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  TERRAFORM_VERSION: '1.6.0'
 
 jobs:
-  lint-terraform:
-    name: Lint Terraform
+  # Terraform validation and linting
+  terraform-lint:
+    name: Terraform Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,183 +23,283 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.0
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: Terraform fmt
-        run: terraform fmt -check -recursive infra/
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infra
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.49.0
 
       - name: Run TFLint
-        run: |
-          cd infra/
-          tflint --init
-          tflint
+        run: tflint --init && tflint
+        working-directory: infra
 
-  lint-python:
-    name: Lint Python
+  # Python linting for auth service
+  python-lint:
+    name: Python Lint (Auth Service)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [auth, query, crawler, ranker, notify]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('services/auth/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
+          pip install -e ".[dev]"
+        working-directory: services/auth
 
       - name: Run Black
-        run: |
-          if [ -d "services/${{ matrix.service }}" ]; then
-            cd services/${{ matrix.service }}
-            black --check --diff .
-          fi
+        run: black --check .
+        working-directory: services/auth
 
       - name: Run isort
-        run: |
-          if [ -d "services/${{ matrix.service }}" ]; then
-            cd services/${{ matrix.service }}
-            isort --check-only --diff .
-          fi
+        run: isort --check-only .
+        working-directory: services/auth
 
-      - name: Run flake8
-        run: |
-          if [ -d "services/${{ matrix.service }}" ]; then
-            cd services/${{ matrix.service }}
-            flake8 .
-          fi
+      - name: Run Flake8
+        run: flake8 .
+        working-directory: services/auth
 
-  lint-frontend:
-    name: Lint Frontend
+      - name: Run MyPy
+        run: mypy .
+        working-directory: services/auth
+
+  # Frontend linting
+  frontend-lint:
+    name: Frontend Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd frontend/
-          npm ci
+        run: npm ci
+        working-directory: frontend
 
       - name: Run ESLint
-        run: |
-          cd frontend/
-          npm run lint
+        run: npm run lint
+        working-directory: frontend
 
-      - name: Run Prettier
-        run: |
-          cd frontend/
-          npm run format:check
+      - name: Run Prettier check
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
+        working-directory: frontend
 
-  terraform-plan:
-    name: Terraform Plan
+      - name: Run TypeScript type check
+        run: npm run type-check
+        working-directory: frontend
+
+  # Auth service tests
+  auth-test:
+    name: Auth Service Tests
     runs-on: ubuntu-latest
-    needs: [lint-terraform]
+    needs: [python-lint]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: orbitagents_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('services/auth/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+        working-directory: services/auth
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/orbitagents_test
+          JWT_SECRET: test-jwt-secret-key-for-testing-minimum-32-characters
+        run: pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+        working-directory: services/auth
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: services/auth/coverage.xml
+          flags: auth-service
+          name: auth-service-coverage
+
+  # Frontend tests
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        working-directory: frontend
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  # Terraform plan
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [terraform-lint]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.0
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Terraform Init
-        run: |
-          cd infra/
-          terraform init
+        run: terraform init
+        working-directory: infra
 
       - name: Terraform Plan
-        run: |
-          cd infra/
-          terraform plan -no-color
-        continue-on-error: false
+        run: terraform plan -no-color
+        working-directory: infra
+        continue-on-error: true
 
-  build-and-push:
-    name: Build and Push Docker Images
+  # Docker builds
+  docker-build:
+    name: Docker Build
     runs-on: ubuntu-latest
-    needs: [lint-python]
-    if: github.ref == 'refs/heads/main'
+    needs: [auth-test, frontend-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
       matrix:
-        service: [auth, query, crawler, ranker, notify]
+        service: [auth, frontend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-west-2
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: orbit-agents-${{ matrix.service }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd services/${{ matrix.service }}
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Build and push auth service image
+        if: matrix.service == 'auth'
+        uses: docker/build-push-action@v5
+        with:
+          context: services/auth
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/orbit-agents-auth:latest
+            ${{ steps.login-ecr.outputs.registry }}/orbit-agents-auth:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  build-frontend:
-    name: Build Frontend
+      - name: Build and push frontend image
+        if: matrix.service == 'frontend'
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/orbit-agents-frontend:latest
+            ${{ steps.login-ecr.outputs.registry }}/orbit-agents-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Frontend build check
+  frontend-build:
+    name: Frontend Build
     runs-on: ubuntu-latest
-    needs: [lint-frontend]
+    needs: [frontend-lint]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd frontend/
-          npm ci
+        run: npm ci
+        working-directory: frontend
 
       - name: Build frontend
-        run: |
-          cd frontend/
-          npm run build
+        run: npm run build
+        working-directory: frontend
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: frontend-build
-          path: frontend/dist/
+          path: frontend/dist
