@@ -16,10 +16,13 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, Request, status, Query as QueryParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 import structlog
+
+# Prometheus metrics
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 from config import settings
 from schemas import (
@@ -37,6 +40,54 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = structlog.get_logger(__name__)
+
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    'http_requests_total',
+    'Total number of HTTP requests',
+    ['method', 'endpoint', 'status_code']
+)
+
+REQUEST_DURATION = Histogram(
+    'http_request_duration_seconds',
+    'HTTP request duration in seconds',
+    ['method', 'endpoint']
+)
+
+PARSE_LATENCY = Histogram(
+    'query_parse_duration_seconds',
+    'Time spent parsing natural language queries',
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+)
+
+SEARCH_LATENCY = Histogram(
+    'property_search_duration_seconds',
+    'Time spent searching properties',
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+)
+
+CACHE_OPERATIONS = Counter(
+    'cache_operations_total',
+    'Total number of cache operations',
+    ['operation', 'result']
+)
+
+ACTIVE_CONNECTIONS = Gauge(
+    'active_connections',
+    'Number of active connections'
+)
+
+ERROR_COUNT = Counter(
+    'errors_total',
+    'Total number of errors',
+    ['error_type', 'endpoint']
+)
+
+OPENSEARCH_OPERATIONS = Counter(
+    'opensearch_operations_total',
+    'Total number of OpenSearch operations',
+    ['operation', 'result']
+)
 
 # Initialize NLU parser
 nlu_parser = NLUParser(model_name=settings.SPACY_MODEL)
@@ -96,6 +147,55 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
+# Metrics middleware
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Middleware to track request metrics."""
+    start_time = time.time()
+    
+    # Track active connections
+    ACTIVE_CONNECTIONS.inc()
+    
+    try:
+        response = await call_next(request)
+        
+        # Record metrics
+        duration = time.time() - start_time
+        endpoint = request.url.path
+        method = request.method
+        status_code = str(response.status_code)
+        
+        REQUEST_COUNT.labels(
+            method=method,
+            endpoint=endpoint,
+            status_code=status_code
+        ).inc()
+        
+        REQUEST_DURATION.labels(
+            method=method,
+            endpoint=endpoint
+        ).observe(duration)
+        
+        # Track 5xx errors
+        if response.status_code >= 500:
+            ERROR_COUNT.labels(
+                error_type="5xx",
+                endpoint=endpoint
+            ).inc()
+        
+        return response
+        
+    except Exception as e:
+        # Track unhandled exceptions
+        ERROR_COUNT.labels(
+            error_type="exception",
+            endpoint=request.url.path
+        ).inc()
+        raise
+    finally:
+        ACTIVE_CONNECTIONS.dec()
 
 
 # Dependency functions
@@ -163,6 +263,7 @@ def check_rate_limit(endpoint: str, limit: int) -> bool:
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle request validation errors."""
     service_metrics['error_count'] += 1
+    ERROR_COUNT.labels(error_type="validation", endpoint=request.url.path).inc()
     
     logger.warning(
         "Validation error",
@@ -185,6 +286,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def value_error_handler(request: Request, exc: ValueError):
     """Handle value errors."""
     service_metrics['error_count'] += 1
+    ERROR_COUNT.labels(error_type="value_error", endpoint=request.url.path).inc()
     
     logger.warning(
         "Value error",
@@ -269,6 +371,12 @@ async def health_check():
     )
 
 
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint."""
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.get("/parse", response_model=ParsedQuery)
 async def parse_query(
     q: str = QueryParam(..., description="Natural language query to parse"),
@@ -300,6 +408,8 @@ async def parse_query(
         cached_result = await cache_manager.get_parsed_query(q)
         if cached_result:
             service_metrics['cache_hits'] += 1
+            CACHE_OPERATIONS.labels(operation="get", result="hit").inc()
+            
             logger.info(
                 "Cache hit for parse query",
                 query=q[:50] + "..." if len(q) > 50 else q,
@@ -308,12 +418,19 @@ async def parse_query(
             return ParsedQuery(**cached_result['parsed_data'])
         
         service_metrics['cache_misses'] += 1
+        CACHE_OPERATIONS.labels(operation="get", result="miss").inc()
         
-        # Parse query
+        # Parse query with timing
+        parse_start = time.time()
         parsed_result = nlu_parser.parse_query(q)
+        parse_duration = time.time() - parse_start
+        
+        # Record parse latency
+        PARSE_LATENCY.observe(parse_duration)
         
         # Cache result
         await cache_manager.set_parsed_query(q, parsed_result.model_dump())
+        CACHE_OPERATIONS.labels(operation="set", result="success").inc()
         
         response_time = (time.time() - start_time) * 1000
         
@@ -321,17 +438,20 @@ async def parse_query(
             "Parsed query successfully",
             query=q[:50] + "..." if len(q) > 50 else q,
             confidence=parsed_result.confidence,
+            parse_duration_ms=parse_duration * 1000,
             response_time_ms=response_time
         )
         
         return parsed_result
         
     except ValueError as e:
+        ERROR_COUNT.labels(error_type="parse_validation", endpoint="/parse").inc()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
+        ERROR_COUNT.labels(error_type="parse_error", endpoint="/parse").inc()
         logger.error(
             "Error parsing query",
             query=q,
@@ -372,6 +492,7 @@ async def search_properties(
         cached_results = await cache_manager.get_search_results(search_key)
         if cached_results:
             service_metrics['cache_hits'] += 1
+            CACHE_OPERATIONS.labels(operation="get", result="hit").inc()
             logger.info(
                 "Cache hit for search",
                 filters=request.filters.model_dump(),
@@ -380,15 +501,29 @@ async def search_properties(
             return SearchResponse(**cached_results)
         
         service_metrics['cache_misses'] += 1
+        CACHE_OPERATIONS.labels(operation="get", result="miss").inc()
         
-        # Perform search
-        results, total_count, query_time = await opensearch_client.search_properties(
-            filters=request.filters,
-            limit=request.limit,
-            offset=request.offset,
-            sort_by=request.sort_by.value,
-            sort_order=request.sort_order.value
-        )
+        # Perform search with timing
+        search_start = time.time()
+        OPENSEARCH_OPERATIONS.labels(operation="search", result="start").inc()
+        
+        try:
+            results, total_count, query_time = await opensearch_client.search_properties(
+                filters=request.filters,
+                limit=request.limit,
+                offset=request.offset,
+                sort_by=request.sort_by.value,
+                sort_order=request.sort_order.value
+            )
+            search_duration = time.time() - search_start
+            
+            # Record search latency
+            SEARCH_LATENCY.observe(search_duration)
+            OPENSEARCH_OPERATIONS.labels(operation="search", result="success").inc()
+            
+        except Exception as e:
+            OPENSEARCH_OPERATIONS.labels(operation="search", result="error").inc()
+            raise e
         
         # Convert results to PropertyListing objects
         property_listings = []
@@ -418,18 +553,21 @@ async def search_properties(
         
         # Cache results
         await cache_manager.set_search_results(search_key, search_response.model_dump())
+        CACHE_OPERATIONS.labels(operation="set", result="success").inc()
         
         logger.info(
             "Search completed successfully",
             results_count=len(property_listings),
             total_matches=total_count,
-            query_time_ms=query_time,
+            opensearch_time_ms=query_time,
+            search_duration_ms=search_duration * 1000,
             response_time_ms=response_time
         )
         
         return search_response
         
     except Exception as e:
+        ERROR_COUNT.labels(error_type="search_error", endpoint="/search").inc()
         logger.error(
             "Error performing search",
             filters=request.filters.model_dump(),

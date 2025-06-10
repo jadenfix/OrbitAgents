@@ -1,0 +1,42 @@
+🚀 Orbit Monitoring Stack Deployed Successfully! 
+
+{{ if .Values.prometheus.enabled }}
+📊 Prometheus Server:
+  - URL: http://{{ .Values.prometheus.service.type | default "ClusterIP" }}:9090
+  - Metrics being scraped from Orbit services
+  - Data retention: {{ .Values.prometheus.prometheus.prometheusSpec.retention | default "30d" }}
+{{ end }}
+
+{{ if .Values.grafana.enabled }}
+📈 Grafana Dashboard:
+  - URL: http://{{ .Values.grafana.service.type | default "ClusterIP" }}:{{ .Values.grafana.service.port | default 3000 }}
+  - Username: {{ .Values.grafana.adminUser | default "admin" }}
+  - Password: {{ .Values.grafana.adminPassword | default "orbit-grafana-2024" }}
+  - Pre-configured dashboards: Orbit Services, Node Metrics
+{{ end }}
+
+{{ if .Values.alertmanager.enabled }}
+🔔 Alertmanager:
+  - Configured for Slack notifications
+  - Monitoring: 5xx error rates, crawl job failures, parse latency
+  - Update Slack webhook URL in values.yaml for notifications
+{{ end }}
+
+🎯 Key Metrics Available:
+  • http_requests_total - API request counts
+  • query_parse_duration_seconds - Parse latency (p95)
+  • crawl_lag_seconds - Time since last successful crawl
+  • crawl_jobs_total - Crawl job success/failure rates
+  • property_search_duration_seconds - Search performance
+
+🛠 Next Steps:
+  1. Update Slack webhook URLs in values.yaml
+  2. Configure LoadBalancer or Ingress for external access
+  3. Set up persistent volumes for data retention
+  4. Customize dashboard queries for your environment
+
+💡 Access Services:
+  kubectl port-forward svc/prometheus-server 9090:9090
+  kubectl port-forward svc/grafana 3000:3000
+
+Happy monitoring! 🎉 

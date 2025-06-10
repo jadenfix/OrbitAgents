@@ -130,14 +130,17 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-              <div className="h-16 bg-gray-200 rounded"></div>
+      <div className="p-6 space-y-4">
+        {/* Loading skeletons */}
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+            <div className="flex justify-between items-start mb-4">
+              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-6 bg-gray-200 rounded w-20"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
             </div>
           </div>
         ))}
@@ -147,40 +150,108 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-8">
-        <HomeIcon className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No properties found</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Try adjusting your search criteria or searching in a different area.
-        </p>
+      <div className="p-6 text-center">
+        <div className="text-gray-500">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+          </svg>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
+          <p className="text-gray-600">Try adjusting your search criteria or filters</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Search Results
-        </h2>
-        <span className="text-sm text-gray-500">
-          {results.length} of {total} properties
-        </span>
+    <div className="p-4 space-y-4 overflow-y-auto h-full">
+      <div className="text-sm text-gray-600 mb-4">
+        {results.length} properties found
       </div>
       
-      <div className="space-y-4">
-        {results.map((listing) => (
-          <PropertyCard key={listing.id} listing={listing} />
-        ))}
-      </div>
-      
-      {results.length < total && (
-        <div className="mt-4 text-center">
-          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Load more properties...
-          </button>
+      {results.map((listing, index) => (
+        <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">
+              {listing.title}
+            </h3>
+            <div className="text-right">
+              <div className="text-xl font-bold text-green-600">
+                {formatPrice(listing.price)}
+              </div>
+                             {listing.relevance_score && (
+                 <div className="text-xs text-gray-500">
+                   {formatRelevanceScore(listing.relevance_score)}% match
+                 </div>
+               )}
+            </div>
+          </div>
+
+          {/* Property Details */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {listing.beds} bed
+            </span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {listing.baths} bath
+            </span>
+                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+               {listing.property_type}
+             </span>
+          </div>
+
+          {/* Address */}
+          <div className="text-sm text-gray-600 mb-3">
+            📍 {listing.address}
+          </div>
+
+          {/* Amenities */}
+          {listing.amenities && listing.amenities.length > 0 && (
+            <div className="mb-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Amenities</h4>
+              <div className="flex flex-wrap gap-1">
+                {listing.amenities.slice(0, 6).map((amenity, idx) => (
+                  <span 
+                    key={idx} 
+                    className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700"
+                  >
+                    {amenity}
+                  </span>
+                ))}
+                {listing.amenities.length > 6 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-500">
+                    +{listing.amenities.length - 6} more
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Performance Metrics */}
+          {listing.performance_metrics && (
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                <div>
+                  <span className="font-medium">Query Time:</span> {listing.performance_metrics.query_time_ms}ms
+                </div>
+                                 <div>
+                   <span className="font-medium">Relevance:</span> {formatRelevanceScore(listing.relevance_score || 0)}%
+                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+              View Details
+            </button>
+            <button className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors">
+              Save Property
+            </button>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   )
 }

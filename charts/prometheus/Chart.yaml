@@ -1,0 +1,26 @@
+apiVersion: v2
+name: prometheus
+description: Prometheus monitoring stack for Orbit services
+type: application
+version: 1.0.0
+appVersion: "2.45.0"
+
+dependencies:
+  - name: prometheus
+    version: "25.8.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheus.enabled
+  
+  - name: grafana
+    version: "7.0.19"
+    repository: "https://grafana.github.io/helm-charts"
+    condition: grafana.enabled
+
+  - name: prometheus-node-exporter
+    version: "4.24.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: nodeExporter.enabled
+
+maintainers:
+  - name: Orbit Team
+    email: team@orbit.com 

@@ -9,8 +9,11 @@ from typing import Dict, Any
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import structlog
+
+# Prometheus metrics
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 from config import settings
 from schemas import CrawlJobStatus, HealthCheck
@@ -39,6 +42,48 @@ structlog.configure(
 )
 
 logger = structlog.get_logger(__name__)
+
+# Prometheus metrics
+CRAWL_JOBS_TOTAL = Counter(
+    'crawl_jobs_total',
+    'Total number of crawl jobs started',
+    ['job_type', 'status']
+)
+
+CRAWL_DURATION = Histogram(
+    'crawl_duration_seconds',
+    'Time spent on crawl jobs',
+    ['job_type'],
+    buckets=[60, 300, 600, 1800, 3600, 7200, 14400]  # 1min to 4hours
+)
+
+CRAWL_LAG = Gauge(
+    'crawl_lag_seconds',
+    'Time since last successful crawl'
+)
+
+LISTINGS_PROCESSED = Counter(
+    'listings_processed_total',
+    'Total number of listings processed',
+    ['source', 'status']
+)
+
+DATA_UPLOAD_DURATION = Histogram(
+    'data_upload_duration_seconds',
+    'Time spent uploading data to S3',
+    buckets=[1, 5, 10, 30, 60, 300, 600]
+)
+
+INDEX_OPERATIONS = Counter(
+    'index_operations_total',
+    'Total number of indexing operations',
+    ['operation', 'status']
+)
+
+ACTIVE_CRAWL_JOBS = Gauge(
+    'active_crawl_jobs',
+    'Number of currently active crawl jobs'
+)
 
 # FastAPI application
 app = FastAPI(
@@ -106,9 +151,16 @@ async def root():
             "health": "/health",
             "crawl": "/crawl",
             "status": "/status/{job_id}",
+            "metrics": "/metrics",
             "docs": "/docs"
         }
     }
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint."""
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/health", response_model=HealthCheck)
@@ -136,7 +188,7 @@ async def health_check():
             mls_api_healthy=component_health.get('mls_api', False)
         )
         
-        # Get last crawl information from database
+        # Get last crawl information from database and update crawl lag
         try:
             async with db_manager.get_session() as db:
                 from sqlalchemy import select, desc
@@ -144,6 +196,7 @@ async def health_check():
                 
                 result = await db.execute(
                     select(CrawlJob)
+                    .where(CrawlJob.status == 'completed')
                     .order_by(desc(CrawlJob.created_at))
                     .limit(1)
                 )
@@ -152,6 +205,11 @@ async def health_check():
                 if last_job:
                     health_response.last_crawl_at = last_job.started_at
                     health_response.last_crawl_status = last_job.status
+                    
+                    # Update crawl lag metric
+                    if last_job.completed_at:
+                        crawl_lag_seconds = (datetime.utcnow() - last_job.completed_at).total_seconds()
+                        CRAWL_LAG.set(crawl_lag_seconds)
                     
         except Exception as e:
             logger.warning("Could not retrieve last crawl info", error=str(e))
@@ -195,6 +253,10 @@ async def trigger_crawl(background_tasks: BackgroundTasks):
     logger.info("Manual crawl job triggered")
     
     try:
+        # Track crawl job start
+        CRAWL_JOBS_TOTAL.labels(job_type="manual", status="started").inc()
+        ACTIVE_CRAWL_JOBS.inc()
+        
         # Start crawl job in background
         job_status = await mls_crawler.run_crawl_job()
         
@@ -396,40 +458,6 @@ async def get_statistics():
             status_code=500,
             detail=f"Failed to retrieve statistics: {str(e)}"
         )
-
-
-@app.get("/metrics")
-async def get_metrics():
-    """
-    Get Prometheus-style metrics for monitoring.
-    
-    Returns:
-        Plain text metrics in Prometheus format
-    """
-    try:
-        metrics = []
-        
-        # Get basic statistics
-        async with db_manager.get_session() as db:
-            from sqlalchemy import select, func
-            from database import Listing, CrawlJob
-            
-            listing_count = await db.execute(select(func.count(Listing.id)))
-            total_listings = listing_count.scalar()
-            
-            job_count = await db.execute(select(func.count(CrawlJob.id)))
-            total_jobs = job_count.scalar()
-        
-        # Format as Prometheus metrics
-        metrics.append(f"crawler_total_listings {total_listings}")
-        metrics.append(f"crawler_total_jobs {total_jobs}")
-        metrics.append(f"crawler_service_up 1")
-        
-        return "\n".join(metrics)
-        
-    except Exception as e:
-        logger.error("Failed to generate metrics", error=str(e))
-        return "crawler_service_up 0"
 
 
 if __name__ == "__main__":
