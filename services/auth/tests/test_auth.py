@@ -97,7 +97,13 @@ class TestUserLogin:
         
         # Verify JWT token is valid
         token = data["access_token"]
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(
+            token, 
+            settings.JWT_SECRET, 
+            algorithms=["HS256"],
+            audience="orbitagents-platform",
+            issuer="orbitagents-auth"
+        )
         assert payload["sub"] == test_user_data["email"]
     
     def test_login_invalid_email(self, client):

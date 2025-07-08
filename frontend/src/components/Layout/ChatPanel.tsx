@@ -52,7 +52,7 @@ const ChatPanel: React.FC = () => {
 
     try {
       // Perform the search
-      await search(query, 10)
+      await search(query)
       
       // Create assistant response based on search results
       let assistantText = ''
@@ -174,7 +174,6 @@ const ChatPanel: React.FC = () => {
               results={results}
               total={total}
               isLoading={searchLoading}
-              error={error}
             />
           </div>
         )}

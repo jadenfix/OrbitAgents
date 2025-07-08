@@ -25,14 +25,36 @@
 
 OrbitAgents is a modern, cloud-native platform for AI-powered web search and information retrieval. Built with a microservices architecture, it provides intelligent agents that can crawl, analyze, rank, and deliver relevant information to users.
 
+### 🆓 **100% FREE TIER AVAILABLE**
+
+Run the entire OrbitAgents platform using only free and open-source tools:
+
+```bash
+git clone https://github.com/your-org/OrbitAgents
+cd OrbitAgents
+make quick-start
+```
+
+**Free Stack Includes:**
+- 🗄️ **PostgreSQL** (free database)
+- 🔍 **OpenSearch** (free Elasticsearch alternative)
+- 📦 **MinIO** (free S3-compatible storage)
+- 🤖 **Ollama** (free local AI models)
+- 🌐 **Playwright** (free browser automation)
+- 📊 **Prometheus + Grafana** (free monitoring)
+- 🔄 **Redis** (free message queue)
+- 🚀 **GitHub Actions** (free CI/CD)
+
 ### Key Features
 
 - 🤖 **AI-Powered Search**: Intelligent information retrieval and ranking
+- 🌐 **Browser Automation**: Visual automation builder with Playwright
 - 🏗️ **Microservices Architecture**: Scalable and maintainable service design
 - ☁️ **Cloud Native**: Built for AWS with Kubernetes orchestration
 - 🔒 **Secure**: Authentication, authorization, and data protection
 - 📊 **Observable**: Comprehensive monitoring and logging
 - 🚀 **CI/CD Ready**: Automated testing, building, and deployment
+- 💰 **Cost Optimized**: Free tier uses only open-source tools
 
 ## Architecture
 

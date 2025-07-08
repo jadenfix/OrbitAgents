@@ -6,6 +6,46 @@
 
 This roadmap outlines our aggressive 14-day development plan to deliver a functional MVP of the OrbitAgents platform. Each day builds upon the previous work to ensure steady progress toward our goals.
 
+### 🚀 **Enhanced Browser Agent Capabilities**
+
+Building on our solid foundation, we're transforming OrbitAgents into a **robust browser agent platform** with these awesome features:
+
+#### **🤖 AI-Powered Browser Automation**
+- **Intelligent Web Scraping**: Advanced crawlers that understand page structure and adapt to changes
+- **Multi-Site Orchestration**: Coordinate actions across multiple websites simultaneously
+- **Smart Form Filling**: AI-driven form completion with context awareness
+- **Visual Element Detection**: Computer vision for dynamic element identification
+
+#### **🧠 Advanced Agent Intelligence**
+- **Conversational AI Interface**: Natural language commands for complex browser operations
+- **Learning & Adaptation**: Agents that improve based on user behavior and preferences
+- **Predictive Actions**: Anticipate user needs and pre-load relevant data
+- **Context-Aware Decisions**: Understand user intent across multiple interactions
+
+#### **🔧 Power User Features**
+- **Workflow Automation**: Create and save complex multi-step browser workflows
+- **Real-time Monitoring**: Live dashboard showing all agent activities
+- **Custom Scripts**: JavaScript injection for advanced automations
+- **API Integration**: Connect with external services and webhooks
+
+#### **🌐 Enhanced Web Capabilities**
+- **Cross-Browser Support**: Chrome, Firefox, Safari, Edge compatibility
+- **Mobile Browser Agents**: Full mobile web automation
+- **Screenshot & Recording**: Capture and replay user interactions
+- **Performance Optimization**: Intelligent caching and prefetching
+
+#### **💰 100% FREE & Open Source Stack**
+- **Database**: PostgreSQL (free) + SQLite for local development
+- **Search**: OpenSearch (free alternative to Elasticsearch)
+- **Storage**: MinIO (free S3-compatible) or local filesystem
+- **Monitoring**: Prometheus + Grafana (free)
+- **Container Registry**: Docker Hub (free tier) or GitHub Container Registry
+- **CI/CD**: GitHub Actions (free for open source)
+- **Deployment**: Kind/Minikube (local) or free cloud tiers (GCP, AWS, Azure)
+- **AI/ML**: Ollama (free local LLMs) + spaCy (free NLP)
+- **Browser Automation**: Playwright (free) + Puppeteer (free)
+- **Message Queue**: Redis (free) or RabbitMQ (free)
+
 ## Week 1: Foundation & Core Services
 
 ### Day 1: Repository Foundation ✅
@@ -42,22 +82,35 @@ This roadmap outlines our aggressive 14-day development plan to deliver a functi
 - [ ] Integration with auth service
 - [ ] Search analytics tracking
 
-### Day 5: Crawler Service Foundation
-**Goal: Web content acquisition**
-- [ ] Basic web crawling capabilities
-- [ ] Robots.txt compliance
-- [ ] Content extraction and parsing
-- [ ] URL queue management
-- [ ] Duplicate detection
-- [ ] Crawl scheduling system
+### Day 5: Browser Agent Service Foundation 🆕
+**Goal: Free browser automation capabilities**
+- [x] Playwright-based browser automation (FREE)
+- [x] Multi-browser support (Chromium, Firefox, WebKit)
+- [x] WebSocket real-time monitoring
+- [x] Screenshot and recording capabilities
+- [x] Task queue with Redis (FREE)
+- [x] Smart form filling and data extraction
+- [x] Visual automation builder UI
+- [x] Free-tier Docker deployment
+
+### Day 6: Enhanced Crawler + Agent Integration
+**Goal: Intelligent web content acquisition**
+- [ ] AI-powered content extraction using free models
+- [ ] Multi-site orchestration capabilities
+- [ ] Intelligent retry logic and error handling
+- [ ] Content classification and tagging
+- [ ] Visual element detection with OpenCV (FREE)
+- [ ] Integration with browser agent workflows
 
 ### Day 6: Frontend Foundation
 **Goal: User interface**
 - [ ] React app with routing setup
 - [ ] Authentication components (login/register)
-- [ ] Search interface design
+- [ ] Advanced search interface with AI chat
+- [ ] Browser automation visual builder
+- [ ] Real-time WebSocket connections
 - [ ] Responsive layout with Tailwind CSS
-- [ ] State management with Zustand
+- [ ] State management with Context API
 - [ ] API integration layer
 
 ### Day 7: Integration & Testing

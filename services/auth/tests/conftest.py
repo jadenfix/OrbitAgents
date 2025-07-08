@@ -2,11 +2,15 @@
 Pytest configuration and fixtures for Auth service tests.
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Set testing environment before importing app modules
+os.environ["TESTING"] = "true"
 
 from main import app
 from database import get_db, Base

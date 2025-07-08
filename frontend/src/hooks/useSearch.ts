@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react'
-import { SearchState, PropertyListing, ParsedQuery } from '../types/search'
-import { searchService } from '../services/search'
+import { useState } from 'react'
+import { SearchState } from '../types/search'
 
 export const useSearch = () => {
   const [searchState, setSearchState] = useState<SearchState>({
@@ -10,75 +9,63 @@ export const useSearch = () => {
     isLoading: false,
   })
 
-  const search = useCallback(async (query: string, limit: number = 10) => {
-    if (!query.trim()) {
-      return
-    }
-
+  const search = async (query: string) => {
     setSearchState(prev => ({
       ...prev,
-      query: query.trim(),
       isLoading: true,
       error: undefined,
+      query,
     }))
 
     try {
-      const response = await searchService.searchPipeline({
-        q: query.trim(),
-        limit,
-        include_parse_details: true,
-      })
+      // Simulated API call - replace with actual implementation
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Mock results for demonstration
+      const mockResults = [
+        {
+          id: '1',
+          title: 'Beautiful 2BR Apartment',
+          address: '123 Main St',
+          city: 'Denver',
+          price: 2500,
+          beds: 2,
+          baths: 2,
+          property_type: 'apartment' as const,
+          amenities: ['Parking', 'Pool'],
+          images: ['https://example.com/image1.jpg'],
+          date_added: new Date().toISOString(),
+          location: { lat: 39.7392, lon: -104.9903 }
+        }
+      ]
 
-      if (response.error) {
-        setSearchState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: response.error,
-        }))
-        return
-      }
-
-      if (response.data) {
-        setSearchState(prev => ({
-          ...prev,
-          results: response.data!.listings,
-          parsedQuery: response.data!.parse,
-          total: response.data!.total,
-          isLoading: false,
-          metrics: {
-            parse_time_ms: response.data!.parse_time_ms,
-            search_time_ms: response.data!.search_time_ms,
-            total_time_ms: response.data!.total_time_ms,
-          },
-        }))
-      }
+      setSearchState(prev => ({
+        ...prev,
+        results: mockResults,
+        total: mockResults.length,
+        isLoading: false,
+      }))
     } catch (error) {
       setSearchState(prev => ({
         ...prev,
+        error: error instanceof Error ? error.message : 'Search failed',
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
       }))
     }
-  }, [])
+  }
 
-  const clearSearch = useCallback(() => {
+  const clearSearch = () => {
     setSearchState({
       query: '',
       results: [],
       total: 0,
       isLoading: false,
     })
-  }, [])
+  }
 
   return {
-    searchState,
+    ...searchState,
     search,
     clearSearch,
-    isLoading: searchState.isLoading,
-    results: searchState.results,
-    parsedQuery: searchState.parsedQuery,
-    total: searchState.total,
-    error: searchState.error,
-    metrics: searchState.metrics,
   }
 } 

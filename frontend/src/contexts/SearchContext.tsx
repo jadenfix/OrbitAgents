@@ -1,17 +1,21 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useSearch } from '../hooks/useSearch'
-import { SearchState } from '../types/search'
+import { PropertyListing, ParsedQuery } from '../types/search'
 
 interface SearchContextType {
-  searchState: SearchState
-  search: (query: string, limit?: number) => Promise<void>
-  clearSearch: () => void
-  isLoading: boolean
-  results: any[]
-  parsedQuery?: any
+  query: string
+  results: PropertyListing[]
+  parsedQuery?: ParsedQuery
   total: number
+  isLoading: boolean
   error?: string
-  metrics?: any
+  metrics?: {
+    parse_time_ms: number
+    search_time_ms: number
+    total_time_ms: number
+  }
+  search: (query: string) => Promise<void>
+  clearSearch: () => void
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined)

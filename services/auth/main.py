@@ -157,7 +157,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash with timing attack protection."""
     if not plain_password or not hashed_password:
         # Use a dummy hash to maintain constant time
-        pwd_context.verify("dummy", "$2b$12$dummy.hash.to.maintain.constant.time.verification")
+        pwd_context.verify("dummy", "$2b$12$QoB1Icxal9ERFSzRFXGtDuKxW5Y6iavpsAw21T9BhauXmpr.65je2")
         return False
     
     try:
@@ -490,7 +490,7 @@ async def login(user_credentials: UserLogin, request: Request, db: Session = Dep
             password_valid = verify_password(user_credentials.password, user.hashed_password)
         else:
             # Perform dummy password verification to prevent timing attacks
-            verify_password("dummy_password", "$2b$12$dummy.hash.to.maintain.constant.time")
+            verify_password("dummy_password", "$2b$12$QoB1Icxal9ERFSzRFXGtDuKxW5Y6iavpsAw21T9BhauXmpr.65je2")
         
         if not user or not password_valid:
             LOGIN_ATTEMPTS.labels(status="failed").inc()

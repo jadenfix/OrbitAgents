@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import SplitPane from 'react-split-pane'
+import { Allotment } from 'allotment'
+import 'allotment/dist/style.css'
 import ChatPanel from './ChatPanel'
 import MapPanel from './MapPanel'
 import SearchResults from '../Search/SearchResults'
@@ -8,7 +9,6 @@ import { SearchProvider, useSearchContext } from '../../contexts/SearchContext'
 const MainContent: React.FC = () => {
   const { results, isLoading } = useSearchContext()
   const [view, setView] = useState<'split' | 'list' | 'map'>('split')
-  const [splitPos, setSplitPos] = useState<string | number>('50%')
 
   const ViewToggle = () => (
     <div className="flex items-center gap-2 p-3 bg-white border-b border-gray-200">
@@ -65,7 +65,7 @@ const MainContent: React.FC = () => {
         <div className="flex-1 h-full bg-gray-100 flex flex-col">
           <ViewToggle />
           <div className="flex-1 overflow-hidden">
-            <SearchResults results={results} isLoading={isLoading} />
+            <SearchResults results={results} isLoading={isLoading} total={results.length} />
           </div>
         </div>
       </div>
@@ -103,24 +103,18 @@ const MainContent: React.FC = () => {
       <div className="flex-1 h-full bg-gray-100 flex flex-col">
         <ViewToggle />
         <div className="flex-1">
-          <SplitPane
-            split="horizontal"
-            minSize={200}
-            maxSize={-200}
-            defaultSize={splitPos}
-            onChange={(size) => setSplitPos(size)}
-            style={{ position: 'relative' }}
-          >
-            {/* Top Panel - List */}
-            <div className="h-full bg-white border-b border-gray-200">
-              <SearchResults results={results} isLoading={isLoading} />
-            </div>
-            
-            {/* Bottom Panel - Map */}
-            <div className="h-full bg-gray-100">
-              <MapPanel />
-            </div>
-          </SplitPane>
+          <Allotment vertical defaultSizes={[300, 300]} minSize={200}>
+            <Allotment.Pane>
+              <div className="h-full bg-white border-b border-gray-200">
+                <SearchResults results={results} isLoading={isLoading} total={results.length} />
+              </div>
+            </Allotment.Pane>
+            <Allotment.Pane>
+              <div className="h-full bg-gray-100">
+                <MapPanel />
+              </div>
+            </Allotment.Pane>
+          </Allotment>
         </div>
       </div>
     </div>
