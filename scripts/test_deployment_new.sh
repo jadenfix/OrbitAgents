@@ -110,9 +110,24 @@ test_post_endpoint "$DEPLOYMENT_URL/api/browser-agent/execute" '{"workflow_id":1
 echo -e "\n${BLUE}📍 Testing Local Deployment (Optional)${NC}"
 echo "======================================="
 
-# Check if local services are running
+# Check if local Flask API is running
+if curl -s http://localhost:8080/api/health >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ Local Flask API is running${NC}"
+    
+    # Test local Flask API endpoints
+    test_json_endpoint "http://localhost:8080/api/health" "Local Flask API Health"
+    test_post_endpoint "http://localhost:8080/api/auth/login" '{"username":"demo","password":"demo"}' "Local Auth Login"
+    test_post_endpoint "http://localhost:8080/api/search" '{"query":"test property"}' "Local Search"
+    test_json_endpoint "http://localhost:8080/api/browser-agent/workflows" "Local Browser Agent Workflows"
+    
+else
+    echo -e "${YELLOW}⚠️  Local Flask API not running${NC}"
+    echo "Start local API with: FLASK_APP=api/index.py python3 -m flask run --port=8080"
+fi
+
+# Check if full local services are running
 if curl -s http://localhost:3001 >/dev/null 2>&1; then
-    echo -e "${GREEN}✅ Local deployment is running${NC}"
+    echo -e "${GREEN}✅ Full local deployment is running${NC}"
     
     # Test local endpoints
     test_endpoint "http://localhost:3001" "200" "Frontend (React App)"
@@ -122,8 +137,8 @@ if curl -s http://localhost:3001 >/dev/null 2>&1; then
     test_json_endpoint "http://localhost:8004/health" "Browser Agent Health"
     
 else
-    echo -e "${YELLOW}⚠️  Local deployment not running${NC}"
-    echo "Start local services with: make start-free"
+    echo -e "${YELLOW}⚠️  Full local deployment not running${NC}"
+    echo "Start full local services with: make start-free"
 fi
 
 echo -e "\n${BLUE}📊 Test Summary${NC}"
