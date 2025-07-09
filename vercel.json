@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "name": "orbitagents",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist",
+        "buildCommand": "npm run build"
+      }
+    },
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "pythonVersion": "3.9"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/index.py",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/auth/(.*)",
+      "dest": "/api/index.py",
+      "methods": ["POST", "GET"]
+    },
+    {
+      "src": "/api/search",
+      "dest": "/api/index.py",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/api/browser-agent/(.*)",
+      "dest": "/api/index.py",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json))",
+      "dest": "/frontend/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/index.html"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "/var/task",
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
+  "regions": ["iad1"],
+  "github": {
+    "autoAlias": false
+  }
+}

@@ -1,0 +1,20 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+Werkzeug==2.3.7
+aiohttp==3.9.0
+
+# Redis (for caching)
+redis==5.0.1
+
+# Logging
+structlog==23.2.0
+
+# Environment
+python-dotenv==1.0.0
+
+# NLP (lightweight)
+spacy==3.7.2
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
