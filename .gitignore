@@ -188,3 +188,4 @@ charts/*.lock
 .idea/
 *.sublime-*
 *.code-workspace 
+.vercel

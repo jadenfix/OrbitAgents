@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "orbitagents",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -57,14 +56,5 @@
     "PYTHONPATH": "/var/task",
     "NODE_ENV": "production"
   },
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 30,
-      "memory": 512
-    }
-  },
-  "regions": ["iad1"],
-  "github": {
-    "autoAlias": false
-  }
+  "regions": ["iad1"]
 }
