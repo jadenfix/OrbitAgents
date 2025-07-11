@@ -15,6 +15,29 @@ CORS(app)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint with API information"""
+    return jsonify({
+        'message': 'OrbitAgents API Server',
+        'version': '1.0.0',
+        'status': 'running',
+        'timestamp': datetime.utcnow().isoformat(),
+        'endpoints': {
+            'health': '/health',
+            'demo': '/api/demo',
+            'api': {
+                'auth': '/api/auth/*',
+                'workflows': '/api/workflows',
+                'browser_actions': '/api/browser-actions/*',
+                'monitoring': '/api/monitoring/*'
+            }
+        },
+        'frontend_url': 'http://localhost:3001',
+        'monitoring_dashboard': 'http://localhost:9090',
+        'documentation': 'https://github.com/jadenfix/Orbit'
+    })
+
 # In-memory storage for demo (use database in production)
 users = {}
 workflows = [

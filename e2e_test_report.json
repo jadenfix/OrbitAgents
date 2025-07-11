@@ -1,0 +1,168 @@
+{
+  "timestamp": "2025-07-10T22:06:36.691210",
+  "summary": {
+    "total": 26,
+    "passed": 18,
+    "failed": 2,
+    "warnings": 4,
+    "success_rate": "69.2%"
+  },
+  "results": [
+    {
+      "test": "API /",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:13.271030",
+      "details": "Root endpoint - 200"
+    },
+    {
+      "test": "API /health",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:13.272141",
+      "details": "Health check - 200"
+    },
+    {
+      "test": "API /api/demo",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:13.272919",
+      "details": "Demo endpoint - 200"
+    },
+    {
+      "test": "API /api/workflows",
+      "status": "WARN",
+      "timestamp": "2025-07-10T22:06:13.273815",
+      "details": "Workflows - 404"
+    },
+    {
+      "test": "API /api/auth/register",
+      "status": "WARN",
+      "timestamp": "2025-07-10T22:06:13.274618",
+      "details": "Auth register - 405"
+    },
+    {
+      "test": "API /api/browser-actions/navigate",
+      "status": "WARN",
+      "timestamp": "2025-07-10T22:06:13.275379",
+      "details": "Browser navigation - 404"
+    },
+    {
+      "test": "API /api/monitoring/health",
+      "status": "WARN",
+      "timestamp": "2025-07-10T22:06:13.276002",
+      "details": "Monitoring health - 404"
+    },
+    {
+      "test": "Frontend Loading",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:18.712480",
+      "details": "Page loaded - Title: OrbitAgents"
+    },
+    {
+      "test": "Hero Text",
+      "status": "FAIL",
+      "timestamp": "2025-07-10T22:06:18.726672",
+      "details": "Expected hero text, got: Intellige|"
+    },
+    {
+      "test": "Navigation",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:18.732473",
+      "details": "Navigation element found"
+    },
+    {
+      "test": "Interactive Elements",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:18.743575",
+      "details": "Found 3 buttons"
+    },
+    {
+      "test": "Typing Animation",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:21.766920",
+      "details": "Final hero text: Intelligent Real Estate Automation Platform|..."
+    },
+    {
+      "test": "Home Route",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:22.960173",
+      "details": "Loaded: http://localhost:3001/"
+    },
+    {
+      "test": "Login Route",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:23.519548",
+      "details": "Login route redirected (expected)"
+    },
+    {
+      "test": "Dashboard Route",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:24.055764",
+      "details": "Dashboard route handled: http://localhost:3001/login"
+    },
+    {
+      "test": "404 Handling",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:24.585142",
+      "details": "404 route redirected to: http://localhost:3001/"
+    },
+    {
+      "test": "Health Check Button",
+      "status": "FAIL",
+      "timestamp": "2025-07-10T22:06:27.537793",
+      "details": "Health check button not found"
+    },
+    {
+      "test": "Demo Button",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:29.570439",
+      "details": "Demo button clicked successfully"
+    },
+    {
+      "test": "Get Started Button",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:29.575634",
+      "details": "Get Started button found"
+    },
+    {
+      "test": "Launch Platform Button",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:29.579639",
+      "details": "Launch Platform button found"
+    },
+    {
+      "test": "Mobile Responsive",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:30.584915",
+      "details": "Mobile viewport set"
+    },
+    {
+      "test": "Desktop Responsive",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:31.595315",
+      "details": "Desktop viewport restored"
+    },
+    {
+      "test": "API Integration",
+      "status": "INFO",
+      "timestamp": "2025-07-10T22:06:32.685493",
+      "details": "API requests detected: 0"
+    },
+    {
+      "test": "Load Performance",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:33.638607",
+      "details": "Page loaded in 0.57s"
+    },
+    {
+      "test": "Resource Count",
+      "status": "INFO",
+      "timestamp": "2025-07-10T22:06:33.661485",
+      "details": "2 scripts, 0 stylesheets"
+    },
+    {
+      "test": "Animation Performance",
+      "status": "PASS",
+      "timestamp": "2025-07-10T22:06:36.663721",
+      "details": "Typing animation completed"
+    }
+  ]
+}
