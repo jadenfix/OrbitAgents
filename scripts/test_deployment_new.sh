@@ -16,7 +16,7 @@ echo -e "${BLUE}🧪 OrbitAgents Deployment Test Suite${NC}"
 echo "======================================"
 
 # Get deployment URL from user or use default
-DEPLOYMENT_URL=${1:-"https://your-app.vercel.app"}
+DEPLOYMENT_URL=${1:-"https://orbitagents-70gg1bioc-jaden-fix-s-projects.vercel.app"}
 
 echo "Testing deployment at: $DEPLOYMENT_URL"
 echo ""

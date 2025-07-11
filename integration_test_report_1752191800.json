@@ -1,0 +1,46 @@
+{
+  "start_time": 1752191792.713448,
+  "tests": {
+    "python_imports": {
+      "flask": true,
+      "playwright": true,
+      "cv2": false,
+      "numpy": true,
+      "PIL": true,
+      "chromadb": false,
+      "sentence_transformers": false,
+      "pydantic": true,
+      "structlog": false
+    },
+    "file_structure": {
+      "api/enhanced_browser_agent.py": true,
+      "api/cloudflare_integration.py": true,
+      "api/requirements.txt": true,
+      "frontend/src/App.tsx": true,
+      "frontend/package.json": true,
+      "package.json": true,
+      "setup.sh": true,
+      "setup_ollama.sh": true,
+      "monitoring/advanced_monitoring.py": true,
+      "tests/test_browser_agent_e2e.py": true,
+      "scripts/troubleshooting.sh": true,
+      "scripts/setup-cloudflare.sh": true
+    },
+    "environment_variables": {
+      "NODE_ENV": false,
+      "FLASK_ENV": false,
+      "PYTHONPATH": false,
+      "OPENAI_API_KEY": false,
+      "CLOUDFLARE_ACCOUNT_ID": false,
+      "OLLAMA_BASE_URL": false
+    },
+    "flask_app": true,
+    "ollama_connection": false,
+    "playwright_browsers": true
+  },
+  "end_time": 1752191800.784321,
+  "duration": 8.070873022079468,
+  "status": "FAILED",
+  "passed_tests": 19,
+  "total_tests": 30
+}

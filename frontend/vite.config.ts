@@ -13,10 +13,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/auth': {
-        target: 'http://localhost:8000',
+      '/api': {
+        target: 'http://localhost:5001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/auth/, '')
+        rewrite: (path) => path
       }
     }
   },

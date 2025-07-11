@@ -7,6 +7,7 @@ from datetime import datetime
 import uuid
 import random
 
+# Create the app
 app = Flask(__name__)
 CORS(app)
 
@@ -42,6 +43,15 @@ workflows = [
         'created_at': '2025-01-01T00:00:00Z'
     }
 ]
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Simple health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'service': 'OrbitAgents API'
+    })
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -129,6 +139,22 @@ def login():
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/demo', methods=['GET'])
+def demo():
+    """Demo endpoint for testing"""
+    return jsonify({
+        'status': 'success',
+        'message': 'OrbitAgents API Demo',
+        'timestamp': datetime.utcnow().isoformat(),
+        'features': [
+            'AI Browser Automation',
+            'Multi-Agent Orchestration',
+            'Vision & OCR Capabilities',
+            'Memory & Learning',
+            'Policy Guardrails'
+        ]
+    })
 
 @app.route('/api/search', methods=['POST'])
 def search():
@@ -244,10 +270,4 @@ def get_execution_status(execution_id):
         logger.error(f"Status error: {str(e)}")
         return jsonify({'error': 'Failed to get status'}), 500
 
-# For Vercel serverless deployment
-def handler(event, context):
-    return app(event, context)
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
-vercel_app = app
+# Remove serverless handler, Vercel will use the WSGI app 'app'
