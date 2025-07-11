@@ -15,18 +15,18 @@ check_port() {
 
 # Check ports
 check_port 3000 || exit 1  # Frontend
-check_port 5000 || exit 1  # API
+check_port 8080 || exit 1  # API (changed from 5000 to avoid macOS AirPlay)
 
 # Start API in background
-echo "Starting API server on port 5000..."
-cd api && python3 index.py &
+echo "Starting API server on port 8080..."
+cd api && PORT=8080 python3 index.py &
 API_PID=$!
 
 # Wait a moment for API to start
 sleep 2
 
 # Check if API started successfully
-if curl -s http://localhost:5000/health >/dev/null; then
+if curl -s http://localhost:8080/health >/dev/null; then
     echo "✅ API server started successfully"
 else
     echo "❌ API server failed to start"
@@ -38,9 +38,9 @@ echo ""
 echo "🎉 OrbitAgents Development Environment Ready!"
 echo ""
 echo "📊 Services:"
-echo "  • API Server: http://localhost:5000"
-echo "  • Health Check: http://localhost:5000/health"
-echo "  • Demo Endpoint: http://localhost:5000/api/demo"
+echo "  • API Server: http://localhost:8080"
+echo "  • Health Check: http://localhost:8080/health"
+echo "  • Demo Endpoint: http://localhost:8080/api/demo"
 echo ""
 echo "🛠️  For frontend development:"
 echo "  cd frontend && npm install && npm run dev"

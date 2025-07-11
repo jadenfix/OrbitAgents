@@ -5,21 +5,25 @@
   "scripts": {
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "frontend": "cd frontend && npm run dev",
-    "backend": "cd api && python3 index.py",
+    "backend": "cd api && PORT=8080 python3 index.py",
     "install-all": "npm install && cd frontend && npm install && cd ../api && pip3 install -r requirements.txt --user",
     "build": "cd frontend && npm run build",
-    "start": "npm run dev",
+    "start": "./launch-fullstack.sh",
     "test": "cd frontend && npm test",
+    "test:all": "./test-all.sh",
     "test:quick": "python3 tests/quick_integration_test.py",
     "test:e2e": "python3 tests/e2e_validation_suite.py",
     "test:browser": "cd api && python3 -m pytest tests/test_browser_agent_e2e.py -v",
+    "validate": "python3 tests/minimal_validation.py",
+    "integration": "./scripts/troubleshooting.sh && python3 tests/minimal_validation.py",
+    "deploy:prepare": "./test-all.sh && echo 'Ready for deployment'",
     "setup": "chmod +x setup.sh && ./setup.sh",
     "setup:ollama": "chmod +x setup_ollama.sh && ./setup_ollama.sh",
     "setup:cloudflare": "chmod +x scripts/setup-cloudflare.sh && ./scripts/setup-cloudflare.sh",
     "troubleshoot": "chmod +x scripts/troubleshooting.sh && ./scripts/troubleshooting.sh",
     "deploy:workers": "chmod +x scripts/deploy-workers.sh && ./scripts/deploy-workers.sh",
     "monitor": "cd monitoring && python3 advanced_monitoring.py",
-    "health": "curl -s http://localhost:5000/health || echo 'Backend not running'"
+    "health": "curl -s http://localhost:8080/health || echo 'Backend not running'"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

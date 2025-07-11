@@ -271,3 +271,16 @@ def get_execution_status(execution_id):
         return jsonify({'error': 'Failed to get status'}), 500
 
 # Remove serverless handler, Vercel will use the WSGI app 'app'
+
+if __name__ == '__main__':
+    port = int(os.getenv('PORT', 8080))  # Changed default from 5000 to 8080
+    debug = os.getenv('FLASK_DEBUG', 'true').lower() == 'true'
+    
+    logger.info(f"Starting OrbitAgents API on port {port}")
+    logger.info(f"Debug mode: {debug}")
+    
+    app.run(
+        host='0.0.0.0',
+        port=port,
+        debug=debug
+    )
