@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-07-12 13:22:55",
+  "total_tests": 10,
+  "passed": 8,
+  "failed": 2,
+  "skipped": 0,
+  "success_rate": 80.0,
+  "overall_status": "FAIL"
+}

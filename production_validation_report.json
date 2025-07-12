@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-07-10T22:12:40.624311",
+  "summary": {
+    "total": 11,
+    "passed": 6,
+    "warnings": 4,
+    "failed": 1,
+    "success_rate": "54.5%"
+  },
+  "results": [
+    "\u2705 Frontend: ONLINE",
+    "\u2705 Backend API: ONLINE",
+    "\u274c Monitoring Dashboard: OFFLINE",
+    "\u2705 API /: WORKING",
+    "\u2705 API /health: WORKING",
+    "\u2705 API /api/demo: WORKING",
+    "\u2705 Frontend Title: FOUND",
+    "\u26a0\ufe0f Frontend Hero text: NOT FOUND",
+    "\u26a0\ufe0f Frontend Platform text: NOT FOUND",
+    "\u26a0\ufe0f Frontend Health button: NOT FOUND",
+    "\u26a0\ufe0f Frontend Demo functionality: NOT FOUND"
+  ]
+}

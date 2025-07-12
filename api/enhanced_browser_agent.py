@@ -14,12 +14,14 @@ import logging
 import os
 import time
 import uuid
+import re
 from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass, field
 from pathlib import Path
 import base64
 from datetime import datetime, timedelta
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qs
+from collections import defaultdict
 
 # AutoGen & LangGraph
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
@@ -1027,6 +1029,302 @@ class EnhancedBrowserAgent:
             self.hybrid_client = None
             self.durable_objects_client = None
 
+class RealEstateScrapingAgent:
+    """Specialized agent for robust real estate website scraping"""
+    
+    def __init__(self, page: Page, logger):
+        self.page = page
+        self.logger = logger
+        
+        # Real estate field mapping with multiple selector strategies
+        self.field_selectors = {
+            "price": [
+                "[data-testid*='price']",
+                ".price", ".listing-price", ".home-price", 
+                "[class*='price']", "[id*='price']",
+                "span:contains('$')", "div:contains('$')"
+            ],
+            "address": [
+                "[data-testid*='address']",
+                ".address", ".listing-address", ".property-address",
+                "[class*='address']", "[id*='address']",
+                "h1", "h2:contains(',')"
+            ],
+            "bedrooms": [
+                "[data-testid*='bed']",
+                ".beds", ".bedrooms", "[class*='bed']",
+                "span:contains('bed')", "div:contains('bed')"
+            ],
+            "bathrooms": [
+                "[data-testid*='bath']",
+                ".baths", ".bathrooms", "[class*='bath']",
+                "span:contains('bath')", "div:contains('bath')"
+            ],
+            "sqft": [
+                "[data-testid*='sqft']", "[data-testid*='square']",
+                ".sqft", ".square-feet", "[class*='sqft']",
+                "span:contains('sqft')", "span:contains('sq ft')"
+            ],
+            "description": [
+                "[data-testid*='description']",
+                ".description", ".property-description", 
+                ".listing-description", "[class*='description']"
+            ],
+            "features": [
+                ".features", ".amenities", ".property-features",
+                "[class*='feature']", "[class*='amenity']"
+            ],
+            "images": [
+                ".gallery img", ".photos img", ".listing-photos img",
+                ".property-images img", "[class*='photo'] img"
+            ]
+        }
+        
+        # Common real estate patterns
+        self.price_patterns = [
+            r'\$[\d,]+',
+            r'\$\s*\d+(?:,\d{3})*',
+            r'Price:\s*\$[\d,]+',
+            r'Listed at \$[\d,]+'
+        ]
+        
+        self.bed_bath_patterns = [
+            r'(\d+)\s*bed',
+            r'(\d+)\s*bedroom',
+            r'(\d+)\s*Bath',
+            r'(\d+)\s*bathroom'
+        ]
+        
+        self.sqft_patterns = [
+            r'([\d,]+)\s*sqft',
+            r'([\d,]+)\s*sq\.?\s*ft',
+            r'([\d,]+)\s*square\s*feet'
+        ]
+    
+    async def extract_listing_data(self, url: str) -> Dict[str, Any]:
+        """Extract comprehensive listing data with multiple fallback strategies"""
+        try:
+            await self.page.goto(url, wait_until="networkidle", timeout=30000)
+            
+            # Wait for content to load
+            await self.page.wait_for_timeout(2000)
+            
+            # Try to close any modals/popups
+            await self._close_modals()
+            
+            # Extract using multiple strategies
+            structured_data = await self._extract_structured_data()
+            selector_data = await self._extract_with_selectors()
+            text_pattern_data = await self._extract_with_patterns()
+            vision_data = await self._extract_with_vision()
+            
+            # Merge and validate results
+            merged_data = self._merge_extraction_results([
+                structured_data,
+                selector_data,
+                text_pattern_data,
+                vision_data
+            ])
+            
+            # Add metadata
+            merged_data.update({
+                "url": url,
+                "domain": urlparse(url).netloc,
+                "extracted_at": datetime.now().isoformat(),
+                "extraction_confidence": self._calculate_confidence(merged_data)
+            })
+            
+            self.logger.info("Listing data extracted", 
+                           url=url, 
+                           fields_found=len([k for k, v in merged_data.items() if v]))
+            
+            return merged_data
+            
+        except Exception as e:
+            self.logger.error("Failed to extract listing data", url=url, error=str(e))
+            return {"error": str(e), "url": url}
+    
+    async def _close_modals(self):
+        """Close common modal dialogs and popups"""
+        modal_selectors = [
+            "[data-testid*='modal'] button[aria-label*='close']",
+            ".modal .close", ".popup .close", ".overlay .close",
+            "button:contains('Close')", "button:contains('×')",
+            "[aria-label='Close']", "[aria-label='close']"
+        ]
+        
+        for selector in modal_selectors:
+            try:
+                element = await self.page.query_selector(selector)
+                if element:
+                    await element.click()
+                    await self.page.wait_for_timeout(500)
+            except:
+                continue
+    
+    async def _extract_structured_data(self) -> Dict[str, Any]:
+        """Extract data from JSON-LD structured data"""
+        data = {}
+        try:
+            # Look for JSON-LD structured data
+            json_ld_elements = await self.page.query_selector_all('script[type="application/ld+json"]')
+            
+            for element in json_ld_elements:
+                try:
+                    content = await element.inner_text()
+                    json_data = json.loads(content)
+                    
+                    # Extract real estate specific fields
+                    if isinstance(json_data, dict):
+                        if json_data.get("@type") in ["RealEstateListing", "Product", "Place"]:
+                            offers = json_data.get("offers", {})
+                            if isinstance(offers, dict):
+                                price = offers.get("price") or offers.get("priceSpecification", {}).get("price")
+                                if price:
+                                    data["price"] = str(price)
+                            
+                            address = json_data.get("address", {})
+                            if isinstance(address, dict):
+                                full_address = ", ".join(filter(None, [
+                                    address.get("streetAddress"),
+                                    address.get("addressLocality"),
+                                    address.get("addressRegion"),
+                                    address.get("postalCode")
+                                ]))
+                                if full_address:
+                                    data["address"] = full_address
+                            
+                            # Extract property details
+                            if "numberOfRooms" in json_data:
+                                data["bedrooms"] = str(json_data["numberOfRooms"])
+                            
+                            if "floorSize" in json_data:
+                                data["sqft"] = str(json_data["floorSize"])
+                                
+                except json.JSONDecodeError:
+                    continue
+                    
+        except Exception as e:
+            self.logger.debug("Structured data extraction failed", error=str(e))
+        
+        return data
+    
+    async def _extract_with_selectors(self) -> Dict[str, Any]:
+        """Extract data using CSS selectors with fallback strategies"""
+        data = {}
+        
+        for field, selectors in self.field_selectors.items():
+            for selector in selectors:
+                try:
+                    if field == "images":
+                        # Handle images specially
+                        elements = await self.page.query_selector_all(selector)
+                        urls = []
+                        for element in elements[:10]:  # Limit to 10 images
+                            src = await element.get_attribute("src")
+                            if src:
+                                urls.append(urljoin(self.page.url, src))
+                        if urls:
+                            data[field] = urls
+                            break
+                    else:
+                        # Handle text content
+                        element = await self.page.query_selector(selector)
+                        if element:
+                            text = await element.inner_text()
+                            if text and text.strip():
+                                data[field] = text.strip()
+                                break
+                except:
+                    continue
+        
+        return data
+    
+    async def _extract_with_patterns(self) -> Dict[str, Any]:
+        """Extract data using regex patterns on page text"""
+        data = {}
+        
+        try:
+            page_text = await self.page.inner_text("body")
+            
+            # Extract price
+            for pattern in self.price_patterns:
+                matches = re.findall(pattern, page_text, re.IGNORECASE)
+                if matches:
+                    data["price"] = matches[0]
+                    break
+            
+            # Extract bedrooms/bathrooms
+            bed_matches = []
+            bath_matches = []
+            
+            for pattern in self.bed_bath_patterns:
+                if "bed" in pattern.lower():
+                    matches = re.findall(pattern, page_text, re.IGNORECASE)
+                    bed_matches.extend(matches)
+                else:
+                    matches = re.findall(pattern, page_text, re.IGNORECASE)
+                    bath_matches.extend(matches)
+            
+            if bed_matches:
+                data["bedrooms"] = bed_matches[0]
+            if bath_matches:
+                data["bathrooms"] = bath_matches[0]
+            
+            # Extract square footage
+            for pattern in self.sqft_patterns:
+                matches = re.findall(pattern, page_text, re.IGNORECASE)
+                if matches:
+                    data["sqft"] = matches[0].replace(",", "")
+                    break
+                    
+        except Exception as e:
+            self.logger.debug("Pattern extraction failed", error=str(e))
+        
+        return data
+    
+    async def _extract_with_vision(self) -> Dict[str, Any]:
+        """Extract data using vision analysis (placeholder for future enhancement)"""
+        # This would use computer vision to identify and extract data from screenshots
+        # For now, return empty dict
+        return {}
+    
+    def _merge_extraction_results(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Merge results from multiple extraction strategies with confidence scoring"""
+        merged = {}
+        field_sources = defaultdict(list)
+        
+        # Collect all values for each field
+        for i, result in enumerate(results):
+            for field, value in result.items():
+                if value and field != "error":
+                    field_sources[field].append((value, i))
+        
+        # Choose best value for each field
+        for field, values in field_sources.items():
+            if not values:
+                continue
+                
+            # Prefer structured data (index 0), then selectors (index 1)
+            if any(source_idx == 0 for _, source_idx in values):
+                merged[field] = next(value for value, source_idx in values if source_idx == 0)
+            elif any(source_idx == 1 for _, source_idx in values):
+                merged[field] = next(value for value, source_idx in values if source_idx == 1)
+            else:
+                # Use first available value
+                merged[field] = values[0][0]
+        
+        return merged
+    
+    def _calculate_confidence(self, data: Dict[str, Any]) -> float:
+        """Calculate extraction confidence based on fields found"""
+        critical_fields = ["price", "address", "bedrooms", "bathrooms"]
+        found_critical = sum(1 for field in critical_fields if data.get(field))
+        
+        total_fields = len([k for k, v in data.items() if v and k not in ["url", "domain", "extracted_at"]])
+        
+        confidence = (found_critical / len(critical_fields)) * 0.7 + (min(total_fields, 8) / 8) * 0.3
+        return round(confidence, 2)
 
 # Factory function for creating the agent
 def create_enhanced_browser_agent(**kwargs) -> EnhancedBrowserAgent:

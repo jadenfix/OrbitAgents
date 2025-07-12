@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-07-12 13:26:33",
+  "total_tests": 5,
+  "passed_tests": 5,
+  "success_rate": 100.0,
+  "overall_status": "PASS",
+  "detailed_results": {
+    "pattern_extraction": {
+      "status": "PASS",
+      "results": {
+        "price": "$450,000",
+        "bedrooms": "3",
+        "bathrooms": "2",
+        "sqft": "1850",
+        "address": "123 Oak Street, Springfield, IL 62701"
+      },
+      "fields_extracted": 5
+    },
+    "selector_strategies": {
+      "status": "PASS",
+      "results": {
+        "total_selectors": 20,
+        "average_fallbacks_per_field": 5.0,
+        "coverage": "comprehensive"
+      }
+    },
+    "domain_detection": {
+      "status": "PASS",
+      "results": {
+        "www.zillow.com": "ZillowScraper",
+        "www.realtor.com": "RealtorComScraper",
+        "www.redfin.com": "RedfinScraper",
+        "unknown-realestate-site.com": "GenericRealEstateScraper"
+      }
+    },
+    "error_recovery": {
+      "status": "PASS",
+      "results": {
+        "total_scenarios": 4,
+        "average_recovery_rate": 0.75,
+        "strategies": [
+          "retry_with_different_wait_conditions",
+          "fallback_to_pattern_matching",
+          "close_modals_and_retry",
+          "exponential_backoff_retry"
+        ]
+      }
+    },
+    "bulk_processing": {
+      "status": "PASS",
+      "results": {
+        "total_urls": 10,
+        "successful_extractions": 10,
+        "success_rate": 1.0,
+        "total_processing_time": 1.0382797718048096,
+        "average_time_per_url": 0.10382797718048095
+      }
+    }
+  }
+}
