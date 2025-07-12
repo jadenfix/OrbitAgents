@@ -1,17 +1,11 @@
 import { useState, useEffect, Suspense, lazy, Component, ReactNode } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Section } from '@/components/ui/Section'
 
-// Reusable Section component for consistent spacing
-const Section = ({ children, className = "", id = "" }: { children: ReactNode, className?: string, id?: string }) => (
-  <section 
-    id={id}
-    className={`container mx-auto max-w-7xl px-4 py-16 space-y-8 ${className}`}
-  >
-    {children}
-  </section>
-)
-
-// Space-themed Error Boundary
+// Space-themed Error      {/* Main Content */}
+      <main className="relative z-10">
+        {/* Hero Section */}
+        <Section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center"oundary
 class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props)
@@ -245,10 +239,9 @@ const SpaceLandingPage = () => {
         </nav>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10">
-        {/* Hero Section */}
-        <Section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+      {/* Hero Section */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-100px)] text-center px-6">
+        <div className="max-w-6xl mx-auto">
           {/* Main orbit animation */}
           <div className="relative w-80 h-80 mx-auto mb-16">
             <div className="absolute inset-0 rounded-full border border-cyan-400/30 animate-spin" style={{ animationDuration: '20s' }}>
@@ -269,35 +262,32 @@ const SpaceLandingPage = () => {
             </div>
           </div>
 
-          {/* Hero Typography */}
-          <div className="space-y-6 mb-12">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <div className="text-center space-y-8 mb-16">
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
+              <span className="block bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Finding Housing
-              </h1>
-              <h2 className="text-4xl md:text-6xl font-semibold leading-snug text-white">
+              </span>
+              <span className="block text-white mt-2 text-4xl md:text-6xl">
                 Doesn't Have to Feel Like
-              </h2>
-              <h3 className="text-3xl md:text-5xl font-bold leading-snug bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              </span>
+              <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mt-2">
                 Another Planet
-              </h3>
-            </div>
+              </span>
+            </h1>
             
-            <div className="max-w-4xl mx-auto">
-              <article className="prose prose-invert lg:prose-xl mx-auto">
-                <p className="text-xl md:text-2xl text-cyan-200 leading-relaxed font-light">
-                  Navigate the universe of real estate with AI-powered agents that search, 
-                  analyze, and discover your perfect home across infinite possibilities.
-                </p>
-              </article>
+            <div className="max-w-3xl mx-auto">
+              <p className="text-xl md:text-2xl text-cyan-200 leading-relaxed font-light">
+                Navigate the universe of real estate with AI-powered agents that search, 
+                analyze, and discover your perfect home across infinite possibilities.
+              </p>
             </div>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-24">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20">
             <button
               onClick={() => window.location.href = '/dashboard'}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-cyan-500/30 min-w-[200px]"
+              className="group bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-cyan-500/30 min-w-[200px]"
             >
               Begin Your Journey
             </button>
@@ -312,77 +302,65 @@ const SpaceLandingPage = () => {
                   alert('Backend offline. Please ensure API is running on port 8080.')
                 }
               }}
-              className="bg-transparent border-2 border-cyan-400 hover:bg-cyan-400/10 text-cyan-300 hover:text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 min-w-[200px]"
+              className="group bg-transparent border-2 border-cyan-400 hover:bg-cyan-400/10 text-cyan-300 hover:text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 min-w-[200px]"
             >
               View Demo
             </button>
           </div>
-        </Section>
 
-        {/* Features Section */}
-        <Section className="py-24 bg-black/20">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Platform Features
-            </h2>
-            <div className="max-w-3xl mx-auto">
-              <article className="prose prose-invert lg:prose-xl mx-auto">
-                <p className="text-lg text-cyan-200">
-                  Discover how our AI-powered platform revolutionizes property search 
-                  with advanced algorithms and intelligent automation.
-                </p>
-              </article>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 px-4">
-            {[
-              {
-                title: "AI Agents",
-                description: "Intelligent agents explore the real estate universe, discovering properties across multiple data sources with advanced algorithms and machine learning capabilities."
-              },
-              {
-                title: "Smart Search",
-                description: "Search across all available properties with advanced filters, location intelligence, personalized recommendations, and real-time market insights."
-              },
-              {
-                title: "Market Analysis",
-                description: "Predict market trends and property values using sophisticated machine learning algorithms and comprehensive historical market data analysis."
-              }
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-indigo-800/30 to-purple-800/30 backdrop-blur-sm border border-cyan-400/20 rounded-2xl p-8 hover:border-cyan-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10"
-              >
-                <h3 className="text-xl font-bold text-white mb-6">
-                  {feature.title}
-                </h3>
-                <article className="prose prose-invert prose-sm">
-                  <p className="text-cyan-200 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </article>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* System Status Section */}
-        <Section className="py-24">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-900/30 to-purple-900/30 backdrop-blur-sm rounded-2xl p-12 border border-cyan-400/20">
-            <div className="text-center mb-12">
-              <h3 className="text-2xl font-bold text-white mb-6">
-                System Status
-              </h3>
-              <article className="prose prose-invert mx-auto">
-                <p className="text-cyan-200">
-                  Test platform connectivity and verify that all agent systems 
-                  are operational and ready for deployment.
-                </p>
-              </article>
+          {/* Feature Cards */}
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Platform Features
+              </h2>
+              <p className="text-lg text-cyan-200 max-w-2xl mx-auto">
+                Discover how our AI-powered platform revolutionizes property search
+              </p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+              {[
+                {
+                  title: "AI Agents",
+                  description: "Intelligent agents explore the real estate universe, discovering properties across multiple data sources with advanced algorithms."
+                },
+                {
+                  title: "Smart Search",
+                  description: "Search across all available properties with advanced filters, location intelligence, and personalized recommendations."
+                },
+                {
+                  title: "Market Analysis",
+                  description: "Predict market trends and property values using machine learning algorithms and comprehensive market data."
+                }
+              ].map((feature, index) => (
+                <div
+                  key={index}
+                  className="bg-gradient-to-br from-indigo-800/30 to-purple-800/30 backdrop-blur-sm border border-cyan-400/20 rounded-2xl p-8 hover:border-cyan-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10"
+                >
+                  <h3 className="text-xl font-bold text-white mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-cyan-200 leading-relaxed text-sm">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* API Testing Section */}
+          <div className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-900/30 to-purple-900/30 backdrop-blur-sm rounded-2xl p-8 border border-cyan-400/20">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                System Status
+              </h3>
+              <p className="text-cyan-200">
+                Test platform connectivity and agent systems
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <button
                 onClick={async () => {
                   try {
@@ -393,7 +371,7 @@ const SpaceLandingPage = () => {
                     alert('Backend offline. Check API at port 8080.')
                   }
                 }}
-                className="bg-gradient-to-r from-green-500/80 to-cyan-500/80 hover:from-green-600/90 hover:to-cyan-600/90 text-white px-8 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-green-500/80 to-cyan-500/80 hover:from-green-600/90 hover:to-cyan-600/90 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
               >
                 Health Check
               </button>
@@ -408,7 +386,7 @@ const SpaceLandingPage = () => {
                     alert('Demo unavailable. Ensure backend is running.')
                   }
                 }}
-                className="bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-600/90 hover:to-pink-600/90 text-white px-8 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-600/90 hover:to-pink-600/90 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
               >
                 Test Demo
               </button>
@@ -420,18 +398,14 @@ const SpaceLandingPage = () => {
               </p>
             </div>
           </div>
-        </Section>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-8">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex items-center justify-center space-x-4 text-cyan-300">
+          {/* Status indicator */}
+          <div className="mt-12 flex items-center justify-center space-x-4 text-cyan-300">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm">Platform online and ready for exploration</span>
+            <span>Platform online and ready</span>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }

@@ -1,16 +1,6 @@
 import { useState, useEffect, Suspense, lazy, Component, ReactNode } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 
-// Reusable Section component for consistent spacing
-const Section = ({ children, className = "", id = "" }: { children: ReactNode, className?: string, id?: string }) => (
-  <section 
-    id={id}
-    className={`container mx-auto max-w-7xl px-4 py-16 space-y-8 ${className}`}
-  >
-    {children}
-  </section>
-)
-
 // Space-themed Error Boundary
 class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -213,93 +203,86 @@ const SpaceLandingPage = () => {
         />
       </div>
 
-      {/* Header Navigation */}
-      <header className="relative z-20">
-        <nav className="flex items-center justify-between p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">O</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                OrbitAgents
-              </h1>
-              <p className="text-xs text-cyan-300">Housing Navigator</p>
-            </div>
+      {/* Navigation */}
+      <nav className="relative z-20 flex items-center justify-between p-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold text-lg">🌌</span>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => window.location.href = '/login'}
-              className="text-cyan-300 hover:text-white transition-colors duration-300 px-4 py-2"
-            >
-              Sign In
-            </button>
-            <button 
-              onClick={() => window.location.href = '/dashboard'}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
-            >
-              Get Started
-            </button>
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              OrbitAgents
+            </h1>
+            <p className="text-xs text-cyan-300">Housing Navigator</p>
           </div>
-        </nav>
-      </header>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="text-cyan-300 hover:text-white transition-colors duration-300"
+          >
+            Sign In
+          </button>
+          <button 
+            onClick={() => window.location.href = '/dashboard'}
+            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-cyan-500/25"
+          >
+            Launch Mission
+          </button>
+        </div>
+      </nav>
 
-      {/* Main Content */}
-      <main className="relative z-10">
-        {/* Hero Section */}
-        <Section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+      {/* Hero Section */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-100px)] text-center px-6">
+        <div className="max-w-6xl mx-auto">
           {/* Main orbit animation */}
-          <div className="relative w-80 h-80 mx-auto mb-16">
+          <div className="relative w-96 h-96 mx-auto mb-12">
             <div className="absolute inset-0 rounded-full border border-cyan-400/30 animate-spin" style={{ animationDuration: '20s' }}>
-              <div className="absolute w-3 h-3 bg-cyan-400 rounded-full top-0 left-1/2 transform -translate-x-1/2 -translate-y-2"></div>
+              <div className="absolute w-4 h-4 bg-cyan-400 rounded-full top-0 left-1/2 transform -translate-x-1/2 -translate-y-2"></div>
             </div>
             <div className="absolute inset-4 rounded-full border border-purple-400/30 animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }}>
-              <div className="absolute w-2 h-2 bg-purple-400 rounded-full top-0 left-1/2 transform -translate-x-1/2 -translate-y-1"></div>
+              <div className="absolute w-3 h-3 bg-purple-400 rounded-full top-0 left-1/2 transform -translate-x-1/2 -translate-y-1"></div>
             </div>
             <div className="absolute inset-8 rounded-full border border-pink-400/30 animate-spin" style={{ animationDuration: '10s' }}>
               <div className="absolute w-2 h-2 bg-pink-400 rounded-full top-0 left-1/2 transform -translate-x-1/2"></div>
             </div>
             
-            {/* Center icon */}
+            {/* Center home icon */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full flex items-center justify-center">
-                <div className="w-8 h-8 bg-white rounded-sm"></div>
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full flex items-center justify-center text-3xl animate-pulse">
+                🏠
               </div>
             </div>
           </div>
 
-          {/* Hero Typography */}
-          <div className="space-y-6 mb-12">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Finding Housing
-              </h1>
-              <h2 className="text-4xl md:text-6xl font-semibold leading-snug text-white">
-                Doesn't Have to Feel Like
-              </h2>
-              <h3 className="text-3xl md:text-5xl font-bold leading-snug bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                Another Planet
-              </h3>
-            </div>
-            
-            <div className="max-w-4xl mx-auto">
-              <article className="prose prose-invert lg:prose-xl mx-auto">
-                <p className="text-xl md:text-2xl text-cyan-200 leading-relaxed font-light">
-                  Navigate the universe of real estate with AI-powered agents that search, 
-                  analyze, and discover your perfect home across infinite possibilities.
-                </p>
-              </article>
-            </div>
-          </div>
+          <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
+            <span className="block bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+              Finding Housing
+            </span>
+            <span className="block text-white mt-4">
+              Doesn't Have to Feel Like
+            </span>
+            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              Another Planet
+            </span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-cyan-200 mb-12 max-w-4xl mx-auto leading-relaxed">
+            Navigate the universe of real estate with AI-powered agents that search, 
+            analyze, and discover your perfect home across infinite possibilities.
+          </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-24">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
             <button
               onClick={() => window.location.href = '/dashboard'}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-cyan-500/30 min-w-[200px]"
+              className="group bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-12 py-4 rounded-full text-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-cyan-500/50"
             >
-              Begin Your Journey
+              <span className="flex items-center justify-center space-x-2">
+                <span>Begin Your Journey</span>
+                <span className="group-hover:translate-x-1 transition-transform">🚀</span>
+              </span>
             </button>
             
             <button
@@ -307,95 +290,80 @@ const SpaceLandingPage = () => {
                 try {
                   const response = await fetch('/api/demo')
                   const data = await response.json()
-                  alert(`Demo Results: ${JSON.stringify(data, null, 2)}`)
+                  alert(`Demo Mission Report: ${JSON.stringify(data, null, 2)}`)
                 } catch (error) {
-                  alert('Backend offline. Please ensure API is running on port 8080.')
+                  alert('Mission Control offline. Please ensure orbital systems are active.')
                 }
               }}
-              className="bg-transparent border-2 border-cyan-400 hover:bg-cyan-400/10 text-cyan-300 hover:text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 min-w-[200px]"
+              className="group bg-transparent border-2 border-cyan-400 hover:bg-cyan-400/10 text-cyan-300 hover:text-white px-12 py-4 rounded-full text-xl font-semibold transition-all duration-300 transform hover:scale-105"
             >
-              View Demo
+              <span className="flex items-center justify-center space-x-2">
+                <span>Demo Mission</span>
+                <span className="group-hover:rotate-12 transition-transform">🛸</span>
+              </span>
             </button>
           </div>
-        </Section>
 
-        {/* Features Section */}
-        <Section className="py-24 bg-black/20">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Platform Features
-            </h2>
-            <div className="max-w-3xl mx-auto">
-              <article className="prose prose-invert lg:prose-xl mx-auto">
-                <p className="text-lg text-cyan-200">
-                  Discover how our AI-powered platform revolutionizes property search 
-                  with advanced algorithms and intelligent automation.
-                </p>
-              </article>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 px-4">
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
             {[
               {
-                title: "AI Agents",
-                description: "Intelligent agents explore the real estate universe, discovering properties across multiple data sources with advanced algorithms and machine learning capabilities."
+                icon: "🤖",
+                title: "AI Space Agents",
+                description: "Intelligent agents explore the vast real estate universe, discovering properties across multiple dimensions of data."
               },
               {
-                title: "Smart Search",
-                description: "Search across all available properties with advanced filters, location intelligence, personalized recommendations, and real-time market insights."
+                icon: "🌍",
+                title: "Planetary Search",
+                description: "Search across all inhabited real estate planets with advanced filters and cosmic intelligence."
               },
               {
-                title: "Market Analysis",
-                description: "Predict market trends and property values using sophisticated machine learning algorithms and comprehensive historical market data analysis."
+                icon: "🔮",
+                title: "Future Vision",
+                description: "Predict market trends and property values using quantum algorithms and temporal analysis."
               }
             ].map((feature, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-br from-indigo-800/30 to-purple-800/30 backdrop-blur-sm border border-cyan-400/20 rounded-2xl p-8 hover:border-cyan-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10"
+                className="group bg-gradient-to-br from-indigo-800/50 to-purple-800/50 backdrop-blur-sm border border-cyan-400/20 rounded-2xl p-8 hover:border-cyan-400/50 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20"
               >
-                <h3 className="text-xl font-bold text-white mb-6">
+                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-cyan-300 transition-colors">
                   {feature.title}
                 </h3>
-                <article className="prose prose-invert prose-sm">
-                  <p className="text-cyan-200 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </article>
+                <p className="text-cyan-200 leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
-        </Section>
 
-        {/* System Status Section */}
-        <Section className="py-24">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-900/30 to-purple-900/30 backdrop-blur-sm rounded-2xl p-12 border border-cyan-400/20">
-            <div className="text-center mb-12">
-              <h3 className="text-2xl font-bold text-white mb-6">
-                System Status
-              </h3>
-              <article className="prose prose-invert mx-auto">
-                <p className="text-cyan-200">
-                  Test platform connectivity and verify that all agent systems 
-                  are operational and ready for deployment.
-                </p>
-              </article>
-            </div>
+          {/* API Testing Section */}
+          <div className="mt-20 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 backdrop-blur-sm rounded-2xl p-8 border border-cyan-400/20">
+            <h3 className="text-3xl font-bold text-white mb-6 flex items-center justify-center space-x-3">
+              <span>🛰️</span>
+              <span>Mission Control Systems</span>
+            </h3>
+            <p className="text-cyan-200 text-center mb-8">
+              Test orbital communication systems and agent connectivity
+            </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 onClick={async () => {
                   try {
                     const response = await fetch('/api/health')
                     const data = await response.json()
-                    alert(`System Status: ${JSON.stringify(data, null, 2)}`)
+                    alert(`🛰️ System Status: ${JSON.stringify(data, null, 2)}`)
                   } catch (error) {
-                    alert('Backend offline. Check API at port 8080.')
+                    alert('🚨 Orbital systems offline. Check mission control at port 8080.')
                   }
                 }}
-                className="bg-gradient-to-r from-green-500/80 to-cyan-500/80 hover:from-green-600/90 hover:to-cyan-600/90 text-white px-8 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/25"
               >
-                Health Check
+                🟢 System Health Check
               </button>
               
               <button
@@ -403,35 +371,29 @@ const SpaceLandingPage = () => {
                   try {
                     const response = await fetch('/api/demo')
                     const data = await response.json()
-                    alert(`Demo Results: ${JSON.stringify(data, null, 2)}`)
+                    alert(`🚀 Demo Mission: ${JSON.stringify(data, null, 2)}`)
                   } catch (error) {
-                    alert('Demo unavailable. Ensure backend is running.')
+                    alert('🛸 Demo mission failed. Ensure agents are deployed on port 8080.')
                   }
                 }}
-                className="bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-600/90 hover:to-pink-600/90 text-white px-8 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25"
               >
-                Test Demo
+                🔮 Demo Agent Mission
               </button>
             </div>
             
-            <div className="text-center">
-              <p className="text-cyan-300 text-sm">
-                Backend API: <code className="bg-indigo-800 px-2 py-1 rounded text-xs">http://localhost:8080</code>
-              </p>
-            </div>
+            <p className="text-center text-cyan-300 text-sm mt-6">
+              Mission Control: <code className="bg-indigo-800 px-2 py-1 rounded">http://localhost:8080</code>
+            </p>
           </div>
-        </Section>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-8">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex items-center justify-center space-x-4 text-cyan-300">
+          {/* Status indicator */}
+          <div className="mt-12 flex items-center justify-center space-x-4 text-cyan-300">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm">Platform online and ready for exploration</span>
+            <span>Orbital systems online • Ready for space exploration</span>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }

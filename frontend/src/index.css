@@ -1,0 +1,435 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom space-themed animations and styles */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /* Cosmic glow effects */
+  .cosmic-glow {
+    box-shadow: 
+      0 0 20px rgba(6, 182, 212, 0.3),
+      0 0 40px rgba(147, 51, 234, 0.2),
+      0 0 60px rgba(236, 72, 153, 0.1);
+  }
+  
+  .cosmic-glow-hover:hover {
+    box-shadow: 
+      0 0 30px rgba(6, 182, 212, 0.5),
+      0 0 60px rgba(147, 51, 234, 0.3),
+      0 0 90px rgba(236, 72, 153, 0.2);
+  }
+  
+  /* Orbital animations */
+  .orbit-slow {
+    animation: orbit 30s linear infinite;
+  }
+  
+  .orbit-medium {
+    animation: orbit 20s linear infinite reverse;
+  }
+  
+  .orbit-fast {
+    animation: orbit 15s linear infinite;
+  }
+  
+  /* Floating animations */
+  .float-slow {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .float-medium {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  .float-fast {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  /* Cosmic dust particles */
+  .cosmic-dust {
+    animation: cosmicDust 8s linear infinite;
+  }
+  
+  /* Twinkling stars */
+  .twinkle {
+    animation: twinkle 3s ease-in-out infinite alternate;
+  }
+  
+  /* Nebula background */
+  .nebula-bg {
+    background: radial-gradient(ellipse at center, 
+      rgba(147, 51, 234, 0.3) 0%, 
+      rgba(79, 70, 229, 0.2) 25%, 
+      rgba(6, 182, 212, 0.1) 50%, 
+      rgba(0, 0, 0, 0.8) 100%);
+  }
+  
+  /* Holographic text effect */
+  .holographic-text {
+    background: linear-gradient(45deg, 
+      #06b6d4, 
+      #8b5cf6, 
+      #ec4899, 
+      #06b6d4);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: holographic 4s ease-in-out infinite;
+  }
+  
+  /* Space button effect */
+  .space-button {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(45deg, #06b6d4, #8b5cf6);
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+  }
+  
+  .space-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.3), 
+      transparent);
+    transition: left 0.8s;
+  }
+  
+  .space-button:hover::before {
+    left: 100%;
+  }
+  
+  /* Glass morphism effect */
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Energy pulse effect */
+  .energy-pulse {
+    animation: energyPulse 2s ease-in-out infinite;
+  }
+  
+  /* Advanced cosmic effects and enhancements */
+  .shooting-star {
+    animation: shootingStar 3s linear infinite;
+  }
+  
+  .planet-system {
+    animation: planetOrbit 25s linear infinite;
+  }
+  
+  .cosmic-wind {
+    animation: cosmicWind 12s ease-in-out infinite;
+  }
+  
+  .aurora {
+    background: linear-gradient(90deg, 
+      transparent 0%,
+      rgba(6, 182, 212, 0.3) 25%,
+      rgba(147, 51, 234, 0.4) 50%,
+      rgba(236, 72, 153, 0.3) 75%,
+      transparent 100%);
+    animation: aurora 8s ease-in-out infinite;
+  }
+  
+  .quantum-ripple {
+    animation: quantumRipple 4s ease-out infinite;
+  }
+  
+  .constellation-line {
+    animation: constellationPulse 6s ease-in-out infinite;
+  }
+  
+  .wormhole {
+    background: conic-gradient(from 0deg at 50% 50%, 
+      #06b6d4, #8b5cf6, #ec4899, #06b6d4);
+    animation: wormhole 8s linear infinite;
+  }
+  
+  .cosmic-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(6, 182, 212, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .nebula-particle {
+    animation: nebulaFloat 15s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #06b6d4, #8b5cf6);
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #0891b2, #7c3aed);
+  }
+}
+
+/* Keyframe animations */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes cosmicDust {
+  0% {
+    transform: translateX(-100vw) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100vw) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes holographic {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes energyPulse {
+  0% {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.8), 0 0 60px rgba(147, 51, 234, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  }
+}
+
+@keyframes shootingStar {
+  0% {
+    transform: translateX(-100vw) translateY(100vh) rotate(45deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100vw) translateY(-100vh) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes planetOrbit {
+  from {
+    transform: rotate(0deg) translateX(200px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(200px) rotate(-360deg);
+  }
+}
+
+@keyframes cosmicWind {
+  0%, 100% {
+    transform: translateX(-50px) scaleX(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(50px) scaleX(1.2);
+    opacity: 0.7;
+  }
+}
+
+@keyframes aurora {
+  0%, 100% {
+    transform: translateX(-100%) skewX(10deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(100%) skewX(-10deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes quantumRipple {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.6;
+    filter: blur(2px);
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+@keyframes constellationPulse {
+  0%, 100% {
+    opacity: 0.3;
+    stroke-width: 1;
+  }
+  50% {
+    opacity: 1;
+    stroke-width: 2;
+  }
+}
+
+@keyframes wormhole {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(360deg) scale(1.1);
+  }
+}
+
+@keyframes nebulaFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-30px) translateX(20px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-15px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-40px) translateX(10px) rotate(270deg);
+  }
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .cosmic-glow {
+    box-shadow: 
+      0 0 10px rgba(6, 182, 212, 0.3),
+      0 0 20px rgba(147, 51, 234, 0.2);
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .glass-morphism {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* High performance settings */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-slow,
+  .orbit-medium,
+  .orbit-fast,
+  .float-slow,
+  .float-medium,
+  .float-fast,
+  .cosmic-dust,
+  .twinkle,
+  .holographic-text,
+  .space-button,
+  .energy-pulse {
+    animation: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .cosmic-glow,
+  .glass-morphism {
+    box-shadow: none;
+    background: white;
+    color: black;
+  }
+}
