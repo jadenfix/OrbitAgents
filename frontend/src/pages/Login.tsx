@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 
 const Login = () => {
+  const { login, register, isLoading } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRegisterMode, setIsRegisterMode] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
@@ -34,19 +37,18 @@ const Login = () => {
       return
     }
 
+    setIsSubmitting(true)
     try {
-      // Simulate authentication
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
       if (isRegisterMode) {
-        setError('Account created successfully! Redirecting...')
-        setTimeout(() => window.location.href = '/dashboard', 2000)
+        await register({ email, password })
       } else {
-        setError('Login successful! Redirecting...')
-        setTimeout(() => window.location.href = '/dashboard', 2000)
+        await login({ email, password })
       }
-    } catch (err: any) {
-      setError('Authentication failed. Please try again.')
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'detail' in err ? String(err.detail) : 'Authentication failed. Please try again.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -216,6 +218,7 @@ const Login = () => {
 
               <button
                 type="submit"
+                disabled={isLoading || isSubmitting}
                 className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 {isRegisterMode ? 'Create Account' : 'Sign In'}

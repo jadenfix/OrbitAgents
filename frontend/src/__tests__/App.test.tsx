@@ -2,11 +2,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import App from '../App'
 
-// Mock react-router-dom
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}))
+const mockAuthState = { isAuthenticated: false }
 
 // Mock AuthContext
 jest.mock('../contexts/AuthContext', () => ({
@@ -14,7 +10,7 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: null,
     token: null,
-    isAuthenticated: false,
+    isAuthenticated: mockAuthState.isAuthenticated,
     isLoading: false,
     login: jest.fn(),
     register: jest.fn(),
@@ -24,17 +20,15 @@ jest.mock('../contexts/AuthContext', () => ({
 }))
 
 // Mock components
-jest.mock('../pages/Login', () => {
-  return function MockLogin() {
-    return <div data-testid="login-page">Login Page</div>
-  }
-})
+jest.mock('../pages/Login', () => ({
+  __esModule: true,
+  default: () => <div data-testid="login-page">Login Page</div>,
+}))
 
-jest.mock('../components/Layout/SplitPaneLayout', () => {
-  return function MockSplitPaneLayout() {
-    return <div data-testid="split-pane-layout">Split Pane Layout</div>
-  }
-})
+jest.mock('../components/Layout/SplitPaneLayout', () => ({
+  __esModule: true,
+  default: () => <div data-testid="split-pane-layout">Split Pane Layout</div>,
+}))
 
 jest.mock('../components/LoadingSpinner', () => {
   return function MockLoadingSpinner() {
@@ -43,12 +37,29 @@ jest.mock('../components/LoadingSpinner', () => {
 })
 
 describe('App', () => {
+  beforeEach(() => { mockAuthState.isAuthenticated = false })
   it('renders without crashing', () => {
+    window.history.replaceState({}, '', '/')
     render(<App />)
+    expect(screen.getByText('OrbitAgents')).toBeInTheDocument()
   })
 
-  it('shows login page when not authenticated', () => {
+  it('shows login page when not authenticated', async () => {
+    window.history.replaceState({}, '', '/login')
     render(<App />)
-    expect(screen.getByTestId('login-page')).toBeInTheDocument()
+    expect(await screen.findByTestId('login-page')).toBeInTheDocument()
   })
-}) 
+  it('redirects an unauthenticated dashboard visit to login', async () => {
+    window.history.replaceState({}, '', '/dashboard')
+    render(<App />)
+    expect(await screen.findByTestId('login-page')).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/login')
+  })
+
+  it('opens dashboard for an authenticated session', async () => {
+    mockAuthState.isAuthenticated = true
+    window.history.replaceState({}, '', '/dashboard')
+    render(<App />)
+    expect(await screen.findByTestId('split-pane-layout')).toBeInTheDocument()
+  })
+})

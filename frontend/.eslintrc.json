@@ -6,12 +6,17 @@
   },
   "extends": [
     "eslint:recommended",
-    "@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended",
     "plugin:react-hooks/recommended"
   ],
   "ignorePatterns": [
     "dist",
-    ".eslintrc.cjs"
+    ".eslintrc.cjs",
+    "src/App-old.tsx",
+    "src/App-original.tsx",
+    "src/App-backup-1752218504.tsx",
+    "src/App-robust.tsx",
+    "src/App-space.tsx"
   ],
   "parser": "@typescript-eslint/parser",
   "plugins": [
