@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { AuthContextType, User, LoginCredentials, RegisterData, ApiError } from '@/types/auth'
 import { authAPI, tokenStorage } from '@/services/auth'
@@ -59,7 +60,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [token])
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
-    setIsLoading(true)
     try {
       const authResponse = await authAPI.login(credentials)
       setToken(authResponse.access_token)
@@ -67,31 +67,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Fetch user data
       const userData = await authAPI.getCurrentUser()
       setUser(userData)
-    } catch (error: any) {
+    } catch (error: unknown) {
       const apiError: ApiError = {
-        detail: error.response?.data?.detail || 'Login failed',
-        status: error.response?.status
+        detail: isAxiosError(error) ? error.response?.data?.detail || 'Login failed' : 'Login failed',
+        status: isAxiosError(error) ? error.response?.status : undefined
       }
       throw apiError
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const register = async (data: RegisterData): Promise<void> => {
-    setIsLoading(true)
     try {
       await authAPI.register(data)
       // After successful registration, log the user in
       await login({ email: data.email, password: data.password })
-    } catch (error: any) {
+    } catch (error: unknown) {
       const apiError: ApiError = {
-        detail: error.response?.data?.detail || 'Registration failed',
-        status: error.response?.status
+        detail: isAxiosError(error) ? error.response?.data?.detail || 'Registration failed' : 'Registration failed',
+        status: isAxiosError(error) ? error.response?.status : undefined
       }
       throw apiError
-    } finally {
-      setIsLoading(false)
     }
   }
 

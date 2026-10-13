@@ -27,5 +27,12 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/App-old.tsx",
+    "src/App-original.tsx",
+    "src/App-backup-1752218504.tsx",
+    "src/App-robust.tsx",
+    "src/App-space.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 } 

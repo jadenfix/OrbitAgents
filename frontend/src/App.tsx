@@ -1,5 +1,6 @@
-import { useState, useEffect, Suspense, lazy, Component, ReactNode } from 'react'
+import { useState, useEffect, Suspense, lazy, Component, ReactNode, ErrorInfo } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 
 // Reusable Section component for consistent spacing
 const Section = ({ children, className = "", id = "" }: { children: ReactNode, className?: string, id?: string }) => (
@@ -22,7 +23,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
     return { hasError: true }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('App Error:', error, errorInfo)
   }
 
@@ -102,15 +103,6 @@ const SpaceLoading = () => (
 )
 
 // Lazy load components with space-themed fallbacks
-const AuthProvider = lazy(() => 
-  import('@/contexts/AuthContext')
-    .then(module => ({ default: module.AuthProvider }))
-    .catch(error => {
-      console.warn('AuthContext failed to load:', error)
-      return { default: ({ children }: { children: ReactNode }) => <>{children}</> }
-    })
-)
-
 const Login = lazy(() => 
   import('@/pages/Login')
     .catch(error => {
@@ -126,24 +118,6 @@ const SplitPaneLayout = lazy(() =>
       return { default: SpaceFallback }
     })
 )
-
-// Auth hook with fallback
-const useAuth = () => {
-  try {
-    const authModule = require('@/contexts/AuthContext')
-    return authModule.useAuth()
-  } catch (error) {
-    console.warn('Auth context not available, using fallback')
-    return {
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      login: async () => {},
-      logout: () => {},
-      register: async () => {}
-    }
-  }
-}
 
 // Main space-themed landing page
 const SpaceLandingPage = () => {

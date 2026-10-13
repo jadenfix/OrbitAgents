@@ -5,7 +5,7 @@ import { useSearchContext } from '../../contexts/SearchContext'
 import { PropertyListing } from '../../types/search'
 
 // Note: You'll need to set your Mapbox access token
-const MAPBOX_TOKEN = (process as any).env?.VITE_MAPBOX_TOKEN || 'pk.your-mapbox-token-here'
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
 interface MapFilters {
   minPrice: number
