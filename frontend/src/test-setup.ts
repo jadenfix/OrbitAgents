@@ -1,16 +1,16 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 
 // Global test utilities and mocks
 global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
-}
+};
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: (query: any) => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -20,7 +20,7 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: () => {},
     dispatchEvent: () => {},
   }),
-})
+});
 
 // Mock localStorage
 const localStorageMock = {
@@ -30,12 +30,12 @@ const localStorageMock = {
   removeItem: jest.fn(() => {}),
   clear: jest.fn(() => {}),
   key: jest.fn(() => null),
-}
+};
 
 Object.defineProperty(global, 'localStorage', {
   value: localStorageMock,
   writable: true,
-})
+});
 
 // Mock fetch
 global.fetch = jest.fn(() =>
@@ -43,7 +43,7 @@ global.fetch = jest.fn(() =>
     ok: true,
     json: () => Promise.resolve({}),
   } as Response)
-)
+);
 
 // Mock process.env
-process.env.VITE_API_URL = 'http://localhost:3001' 
+process.env.VITE_API_URL = 'http://localhost:3001';

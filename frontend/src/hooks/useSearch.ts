@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { SearchState } from '../types/search'
+import { useState } from 'react';
+import { SearchState } from '../types/search';
 
 export const useSearch = () => {
   const [searchState, setSearchState] = useState<SearchState>({
@@ -7,20 +7,20 @@ export const useSearch = () => {
     results: [],
     total: 0,
     isLoading: false,
-  })
+  });
 
   const search = async (query: string) => {
-    setSearchState(prev => ({
+    setSearchState((prev) => ({
       ...prev,
       isLoading: true,
       error: undefined,
       query,
-    }))
+    }));
 
     try {
       // Simulated API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Mock results for demonstration
       const mockResults = [
         {
@@ -35,24 +35,24 @@ export const useSearch = () => {
           amenities: ['Parking', 'Pool'],
           images: ['https://example.com/image1.jpg'],
           date_added: new Date().toISOString(),
-          location: { lat: 39.7392, lon: -104.9903 }
-        }
-      ]
+          location: { lat: 39.7392, lon: -104.9903 },
+        },
+      ];
 
-      setSearchState(prev => ({
+      setSearchState((prev) => ({
         ...prev,
         results: mockResults,
         total: mockResults.length,
         isLoading: false,
-      }))
+      }));
     } catch (error) {
-      setSearchState(prev => ({
+      setSearchState((prev) => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Search failed',
         isLoading: false,
-      }))
+      }));
     }
-  }
+  };
 
   const clearSearch = () => {
     setSearchState({
@@ -60,12 +60,12 @@ export const useSearch = () => {
       results: [],
       total: 0,
       isLoading: false,
-    })
-  }
+    });
+  };
 
   return {
     ...searchState,
     search,
     clearSearch,
-  }
-} 
+  };
+};

@@ -1,10 +1,11 @@
-import { SearchPipelineRequest, SearchPipelineResponse } from '../types/search'
+import { SearchPipelineRequest, SearchPipelineResponse } from '../types/search';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_QUERY_SERVICE_URL || 'http://localhost:8001'
+const API_BASE_URL =
+  import.meta.env.VITE_QUERY_SERVICE_URL || 'http://localhost:8001';
 
 interface ApiResponse<T> {
-  data?: T
-  error?: string
+  data?: T;
+  error?: string;
 }
 
 class SearchService {
@@ -19,47 +20,52 @@ class SearchService {
           ...options.headers,
         },
         ...options,
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
-      const data = await response.json()
-      return { data }
+      const data = await response.json();
+      return { data };
     } catch (error) {
-      console.error('API request failed:', error)
-      return { 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
-      }
+      console.error('API request failed:', error);
+      return {
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      };
     }
   }
 
   /**
    * Search for properties using the complete pipeline (parse + search)
    */
-  async searchPipeline(request: SearchPipelineRequest): Promise<ApiResponse<SearchPipelineResponse>> {
+  async searchPipeline(
+    request: SearchPipelineRequest
+  ): Promise<ApiResponse<SearchPipelineResponse>> {
     return this.makeRequest<SearchPipelineResponse>('/search_pipeline', {
       method: 'POST',
       body: JSON.stringify(request),
-    })
+    });
   }
 
   /**
    * Get service health and statistics
    */
-  async getHealth(): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>('/health')
+  async getHealth(): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest<Record<string, unknown>>('/health');
   }
 
   /**
    * Get service statistics for monitoring
    */
-  async getStats(): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>('/stats')
+  async getStats(): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest<Record<string, unknown>>('/stats');
   }
 }
 
-export const searchService = new SearchService()
-export default searchService 
+export const searchService = new SearchService();
+export default searchService;
