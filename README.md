@@ -240,3 +240,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ by the OrbitAgents Team**
+
+## Real local authentication check
+
+Install `pip install -e services/auth`, then run
+`python scripts/check_auth_http.py`. This starts the actual auth HTTP service
+on loopback, registers an isolated account, checks valid/rejected requests,
+verifies bcrypt storage in a temporary SQLite database, restarts the service,
+and confirms login still works. It makes no provider API calls.
+
+This gate covers authentication only. Query/search, crawling, mapping, and
+notifications still require their actual services or explicit recording labels.
+The query service now has a nonempty build manifest matching the Compose entry.
+The ranker/notify directories are unfinished scaffolds, not tested services.
