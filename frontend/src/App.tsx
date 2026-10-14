@@ -392,8 +392,8 @@ const SpaceLandingPage = () => {
               </h3>
               <article className="prose prose-invert mx-auto">
                 <p className="text-cyan-200">
-                  Check gateway connectivity. Property search and browser execution
-                  depend on separately configured services.
+                  Check gateway connectivity. Property search and browser
+                  execution depend on separately configured services.
                 </p>
               </article>
             </div>

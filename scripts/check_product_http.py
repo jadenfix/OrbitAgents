@@ -6,7 +6,7 @@ from pathlib import Path
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 r = Path(__file__).resolve().parents[1]
 evidence = Path(os.getenv("ORBIT_EVIDENCE_DIR", str(r / "artifacts/product-browser")))
-evidence.mkdir(exist_ok=True)
+evidence.mkdir(parents=True, exist_ok=True)
 
 
 def port():
