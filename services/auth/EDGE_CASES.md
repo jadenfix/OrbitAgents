@@ -516,3 +516,22 @@ ANTHROPIC_MODEL="claude-3-haiku-20240307"
 - Error tracking
 
 This comprehensive edge case documentation ensures the auth service is production-ready with enterprise-grade security and reliability. 
+## Password storage boundary
+
+Registration and login enforce bcrypt's limit of **72 UTF-8 bytes**, with a
+character-count cap as an additional inexpensive upper bound. Multibyte text
+can reach that budget before 72 characters. The hash and verification functions
+independently enforce it; neither truncates or normalizes a password. Leading
+whitespace is rejected at signup and remains part of the exact password at
+login. Request validation responses omit raw inputs and exception contexts.
+
+The service uses maintained direct bcrypt 5 with 12 rounds and supports standard
+existing `$2a$`/`$2b$` hashes for passwords inside the budget. An old hash does
+not reveal whether its creator silently truncated a longer password. Accounts
+known to have used longer passwords need a credential reset before deployment;
+there is no safe way to recover their original suffix from the existing hash.
+No hashes are rewritten and no persisted accounts are changed by this repair.
+
+The real loopback HTTP check covers exact-boundary ASCII and multibyte signup,
+JWT login, two distinct over-budget passwords sharing the accepted prefix,
+secret-safe errors/logs, SQLite persistence, and a full process restart.

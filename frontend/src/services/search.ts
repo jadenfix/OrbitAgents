@@ -1,10 +1,10 @@
-import { SearchPipelineRequest, SearchPipelineResponse } from '../types/search'
+import { SearchPipelineRequest, SearchPipelineResponse } from '../types/search';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_QUERY_SERVICE_URL || 'http://localhost:8001'
+const API_BASE_URL = '/api/query';
 
 interface ApiResponse<T> {
-  data?: T
-  error?: string
+  data?: T;
+  error?: string;
 }
 
 class SearchService {
@@ -19,47 +19,89 @@ class SearchService {
           ...options.headers,
         },
         ...options,
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          typeof errorData.detail === 'string'
+            ? errorData.detail
+            : `Search unavailable (HTTP ${response.status}).`
+        );
       }
 
-      const data = await response.json()
-      return { data }
+      const data = await response.json();
+      return { data };
     } catch (error) {
-      console.error('API request failed:', error)
-      return { 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
-      }
+      return {
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      };
     }
   }
 
   /**
    * Search for properties using the complete pipeline (parse + search)
    */
-  async searchPipeline(request: SearchPipelineRequest): Promise<ApiResponse<SearchPipelineResponse>> {
-    return this.makeRequest<SearchPipelineResponse>('/search_pipeline', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    })
+  async searchPipeline(
+    request: SearchPipelineRequest,
+    signal?: AbortSignal
+  ): Promise<ApiResponse<SearchPipelineResponse>> {
+    const response = await this.makeRequest<SearchPipelineResponse>(
+      '/search_pipeline',
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+        signal,
+      }
+    );
+    const data = response.data;
+    if (
+      data &&
+      (!Array.isArray(data.listings) ||
+        !Number.isInteger(data.total) ||
+        data.total < data.listings.length ||
+        ![data.parse_time_ms, data.search_time_ms, data.total_time_ms].every(
+          (value) => Number.isFinite(value) && value >= 0
+        ) ||
+        !data.listings.every(
+          (item) =>
+            typeof item.id === 'string' &&
+            typeof item.title === 'string' &&
+            typeof item.address === 'string' &&
+            typeof item.city === 'string' &&
+            typeof item.date_added === 'string' &&
+            Array.isArray(item.amenities) &&
+            Array.isArray(item.images) &&
+            typeof item.property_type === 'string' &&
+            [
+              item.price,
+              item.beds,
+              item.baths,
+              item.location?.lat,
+              item.location?.lon,
+            ].every(Number.isFinite)
+        ))
+    ) {
+      return { error: 'Search service returned invalid listing data.' };
+    }
+    return response;
   }
 
   /**
    * Get service health and statistics
    */
-  async getHealth(): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>('/health')
+  async getHealth(): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest<Record<string, unknown>>('/health');
   }
 
   /**
    * Get service statistics for monitoring
    */
-  async getStats(): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>('/stats')
+  async getStats(): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest<Record<string, unknown>>('/stats');
   }
 }
 
-export const searchService = new SearchService()
-export default searchService 
+export const searchService = new SearchService();
+export default searchService;

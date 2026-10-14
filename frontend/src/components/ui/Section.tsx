@@ -1,18 +1,18 @@
-import { ReactNode } from 'react'
+import { ReactNode } from 'react';
 
 interface SectionProps {
-  children: ReactNode
-  className?: string
-  id?: string
+  children: ReactNode;
+  className?: string;
+  id?: string;
 }
 
-export const Section = ({ children, className = "", id }: SectionProps) => (
-  <section 
+export const Section = ({ children, className = '', id }: SectionProps) => (
+  <section
     id={id}
-    className={`container mx-auto max-w-7xl px-4 py-16 space-y-8 ${className}`}
+    className={`container mx-auto max-w-7xl space-y-8 px-4 py-16 ${className}`}
   >
     {children}
   </section>
-)
+);
 
-export default Section
+export default Section;

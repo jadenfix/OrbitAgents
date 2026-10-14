@@ -1,71 +1,66 @@
-import { useState } from 'react'
-import { SearchState } from '../types/search'
+import { useEffect, useRef, useState } from 'react';
+import { SearchState } from '../types/search';
+import { searchService } from '../services/search';
+
+const emptyState: SearchState = {
+  query: '',
+  results: [],
+  total: 0,
+  isLoading: false,
+};
 
 export const useSearch = () => {
-  const [searchState, setSearchState] = useState<SearchState>({
-    query: '',
-    results: [],
-    total: 0,
-    isLoading: false,
-  })
+  const [searchState, setSearchState] = useState<SearchState>(emptyState);
+  const requestId = useRef(0);
+  const controller = useRef<AbortController>();
+  useEffect(() => () => controller.current?.abort(), []);
 
   const search = async (query: string) => {
-    setSearchState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: undefined,
-      query,
-    }))
-
+    const q = query.trim();
+    if (!q || q.length > 500)
+      throw new Error('Enter a search between 1 and 500 characters.');
+    controller.current?.abort();
+    controller.current = new AbortController();
+    const id = ++requestId.current;
+    setSearchState({ ...emptyState, query: q, isLoading: true });
+    const activeController = controller.current;
+    const timeout = window.setTimeout(() => activeController.abort(), 20000);
+    let response;
     try {
-      // Simulated API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock results for demonstration
-      const mockResults = [
-        {
-          id: '1',
-          title: 'Beautiful 2BR Apartment',
-          address: '123 Main St',
-          city: 'Denver',
-          price: 2500,
-          beds: 2,
-          baths: 2,
-          property_type: 'apartment' as const,
-          amenities: ['Parking', 'Pool'],
-          images: ['https://example.com/image1.jpg'],
-          date_added: new Date().toISOString(),
-          location: { lat: 39.7392, lon: -104.9903 }
-        }
-      ]
-
-      setSearchState(prev => ({
-        ...prev,
-        results: mockResults,
-        total: mockResults.length,
-        isLoading: false,
-      }))
-    } catch (error) {
-      setSearchState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Search failed',
-        isLoading: false,
-      }))
+      response = await searchService.searchPipeline(
+        { q, limit: 20, include_parse_details: true },
+        activeController.signal
+      );
+    } finally {
+      window.clearTimeout(timeout);
     }
-  }
+    if (id !== requestId.current)
+      throw new Error('Search replaced by a newer request.');
+    if (!response.data || response.error) {
+      const error = response.error || 'Search service returned no data.';
+      setSearchState({ ...emptyState, query: q, error });
+      throw new Error(error);
+    }
+    const data = response.data;
+    setSearchState({
+      query: q,
+      results: data.listings,
+      total: data.total,
+      parsedQuery: data.parse,
+      isLoading: false,
+      metrics: {
+        parse_time_ms: data.parse_time_ms,
+        search_time_ms: data.search_time_ms,
+        total_time_ms: data.total_time_ms,
+      },
+    });
+    return data;
+  };
 
   const clearSearch = () => {
-    setSearchState({
-      query: '',
-      results: [],
-      total: 0,
-      isLoading: false,
-    })
-  }
-
-  return {
-    ...searchState,
-    search,
-    clearSearch,
-  }
-} 
+    ++requestId.current;
+    controller.current?.abort();
+    setSearchState(emptyState);
+  };
+  return { ...searchState, search, clearSearch };
+};

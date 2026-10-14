@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbit-agents-query"
+version = "0.1.0"
+description = "Property query parsing and search API"
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+py-modules = ["main", "config", "schemas", "nlu_parser", "cache_manager", "opensearch_client"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

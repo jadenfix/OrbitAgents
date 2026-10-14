@@ -13,8 +13,13 @@ export default defineConfig({
   server: {
     port: 3001,
     proxy: {
+      '/api/query': {
+        target: process.env.QUERY_SERVICE_URL || 'http://localhost:8001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/query/, '')
+      },
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.API_GATEWAY_URL || 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path
       }
