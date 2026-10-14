@@ -1,5 +1,9 @@
 import { createContext, useContext } from 'react';
-import { PropertyListing, ParsedQuery } from '../types/search';
+import {
+  PropertyListing,
+  ParsedQuery,
+  SearchPipelineResponse,
+} from '../types/search';
 
 interface SearchContextType {
   query: string;
@@ -13,7 +17,7 @@ interface SearchContextType {
     search_time_ms: number;
     total_time_ms: number;
   };
-  search: (query: string) => Promise<void>;
+  search: (query: string) => Promise<SearchPipelineResponse | void>;
   clearSearch: () => void;
 }
 

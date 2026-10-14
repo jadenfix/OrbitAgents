@@ -12,15 +12,12 @@ interface Message {
 }
 
 const ChatPanel: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const {
     search,
     results,
     total,
     isLoading: searchLoading,
-    error,
-    parsedQuery,
-    metrics,
   } = useSearchContext();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -30,7 +27,23 @@ const ChatPanel: React.FC = () => {
       timestamp: new Date(),
     },
   ]);
-  const [inputText, setInputText] = useState('');
+  const draftKey = `orbit-search-draft:${user?.id || user?.email || 'anonymous'}`;
+  const [draftWarning, setDraftWarning] = useState('');
+  const [inputText, setInputText] = useState(() => {
+    try {
+      return localStorage.getItem(draftKey)?.slice(0, 500) || '';
+    } catch {
+      return '';
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftKey, inputText);
+      setDraftWarning('');
+    } catch {
+      setDraftWarning('Draft could not be saved on this device.');
+    }
+  }, [inputText, draftKey]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,14 +73,18 @@ const ChatPanel: React.FC = () => {
 
     try {
       // Perform the search
-      await search(query);
+      const response = await search(query);
+      if (!response) throw new Error('Search service returned no data.');
+      const {
+        listings: currentResults,
+        total: currentTotal,
+        parse: parsedQuery,
+      } = response;
 
       // Create assistant response based on search results
       let assistantText = '';
 
-      if (error) {
-        assistantText = `I encountered an error while searching: ${error}. Please try rephrasing your query.`;
-      } else if (parsedQuery) {
+      if (parsedQuery) {
         const confidence = Math.round(parsedQuery.confidence * 100);
         let parseInfo = `I understood you're looking for `;
 
@@ -90,15 +107,15 @@ const ChatPanel: React.FC = () => {
 
         parseInfo += ` (${confidence}% confidence).`;
 
-        if (results.length > 0) {
-          assistantText = `${parseInfo} I found ${total} matching properties! Showing the top ${results.length} results below.`;
+        if (currentResults.length > 0) {
+          assistantText = `${parseInfo} I found ${currentTotal} matching properties! Showing the top ${currentResults.length} results below.`;
         } else {
           assistantText = `${parseInfo} Unfortunately, I didn't find any properties matching your criteria. Try adjusting your search terms or expanding your area.`;
         }
 
-        if (metrics) {
-          assistantText += ` (Search completed in ${metrics.total_time_ms.toFixed(0)}ms)`;
-        }
+        assistantText += ` (Search completed in ${response.total_time_ms.toFixed(0)}ms)`;
+      } else {
+        assistantText = `Found ${currentTotal} matching properties. Showing ${currentResults.length} results.`;
       }
 
       const assistantMessage: Message = {
@@ -111,7 +128,7 @@ const ChatPanel: React.FC = () => {
     } catch (err) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an unexpected error while processing your search. Please try again.',
+        text: `Search unavailable: ${err instanceof Error ? err.message : 'Please try again.'}`,
         sender: 'assistant',
         timestamp: new Date(),
       };
@@ -137,6 +154,12 @@ const ChatPanel: React.FC = () => {
         )}
       </div>
 
+      <button
+        onClick={logout}
+        className="self-start px-4 py-2 text-sm text-blue-700"
+      >
+        Sign out
+      </button>
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {messages.map((message) => (
@@ -204,17 +227,25 @@ const ChatPanel: React.FC = () => {
 
       {/* Input */}
       <div className="border-t border-gray-200 bg-white p-4">
+        {draftWarning && (
+          <p role="status" className="mb-2 text-xs text-amber-700">
+            {draftWarning}
+          </p>
+        )}
         <form onSubmit={handleSendMessage} className="flex space-x-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ask me anything..."
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Property search"
+            maxLength={500}
+            className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
           <button
             type="submit"
+            aria-label="Search properties"
             disabled={isLoading || !inputText.trim()}
             className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >

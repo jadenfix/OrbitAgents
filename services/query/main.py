@@ -32,7 +32,7 @@ from schemas import (
 )
 from nlu_parser import NLUParser
 from cache_manager import cache_manager
-from opensearch_client import opensearch_client
+from opensearch_client import opensearch_client, SearchUnavailableError
 
 # Configure structured logging
 logging.basicConfig(
@@ -521,7 +521,9 @@ async def search_properties(
             SEARCH_LATENCY.observe(search_duration)
             OPENSEARCH_OPERATIONS.labels(operation="search", result="success").inc()
             
-        except Exception as e:
+        except SearchUnavailableError:
+        raise HTTPException(status_code=503, detail="Property index is unavailable; no search result was received")
+    except Exception as e:
             OPENSEARCH_OPERATIONS.labels(operation="search", result="error").inc()
             raise e
         
@@ -697,7 +699,9 @@ async def search_pipeline(
                     if all(field in result for field in ['id', 'price', 'beds', 'baths', 'location', 'address', 'city', 'property_type', 'title', 'date_added']):
                         listing = PropertyListing(**result)
                         property_listings.append(listing)
-                except Exception as e:
+                except SearchUnavailableError:
+        raise HTTPException(status_code=503, detail="Property index is unavailable; no search result was received")
+    except Exception as e:
                     logger.warning(f"Error converting search result to PropertyListing: {e}")
                     continue
             

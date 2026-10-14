@@ -26,7 +26,9 @@ const mockMarkerConstructor = jest.fn(() => {
   mockMarkers.push(marker);
   return marker;
 });
-jest.mock('../components/Layout/mapboxConfig', () => ({ MAPBOX_TOKEN: '' }));
+jest.mock('../components/Layout/mapboxConfig', () => ({
+  MAPBOX_TOKEN: 'explicit-test-fixture',
+}));
 jest.mock('mapbox-gl/dist/mapbox-gl.css', () => ({}));
 jest.mock('mapbox-gl', () => ({
   __esModule: true,

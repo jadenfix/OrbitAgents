@@ -71,7 +71,7 @@ const MapPanel: React.FC = () => {
   };
 
   useEffect(() => {
-    if (map.current) return; // Initialize map only once
+    if (map.current || !MAPBOX_TOKEN) return; // Initialize only a configured map
 
     if (mapContainer.current) {
       mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -297,6 +297,16 @@ const MapPanel: React.FC = () => {
     });
   };
 
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="flex h-full items-center justify-center p-6 text-center text-gray-600">
+        <p>
+          Map unavailable. Listing search remains available; a Mapbox token is
+          required to display the map.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="relative h-full w-full">
       {/* Filter Controls */}

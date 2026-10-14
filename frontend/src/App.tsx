@@ -297,9 +297,8 @@ const SpaceLandingPage = () => {
             <div className="mx-auto max-w-4xl">
               <article className="prose prose-invert mx-auto lg:prose-xl">
                 <p className="text-xl font-light leading-relaxed text-cyan-200 md:text-2xl">
-                  Navigate the universe of real estate with AI-powered agents
-                  that search, analyze, and discover your perfect home across
-                  infinite possibilities.
+                  Search your connected property index with natural language.
+                  Review matching homes, compare prices, and narrow your search.
                 </p>
               </article>
             </div>
@@ -354,17 +353,17 @@ const SpaceLandingPage = () => {
               {
                 title: 'AI Agents',
                 description:
-                  'Intelligent agents explore the real estate universe, discovering properties across multiple data sources with advanced algorithms and machine learning capabilities.',
+                  'Describe your housing needs in plain language. The query service extracts criteria and searches your connected index.',
               },
               {
                 title: 'Smart Search',
                 description:
-                  'Search across all available properties with advanced filters, location intelligence, personalized recommendations, and real-time market insights.',
+                  'Find matching properties in your connected index, then review bedrooms, prices, amenities and location.',
               },
               {
                 title: 'Market Analysis',
                 description:
-                  'Predict market trends and property values using sophisticated machine learning algorithms and comprehensive historical market data analysis.',
+                  'Compare listing prices and amenities. Market prediction and live MLS ingestion require separately configured services.',
               },
             ].map((feature, index) => (
               <div
@@ -393,8 +392,8 @@ const SpaceLandingPage = () => {
               </h3>
               <article className="prose prose-invert mx-auto">
                 <p className="text-cyan-200">
-                  Test platform connectivity and verify that all agent systems
-                  are operational and ready for deployment.
+                  Check gateway connectivity. Property search and browser execution
+                  depend on separately configured services.
                 </p>
               </article>
             </div>
@@ -449,7 +448,7 @@ const SpaceLandingPage = () => {
           <div className="flex items-center justify-center space-x-4 text-cyan-300">
             <div className="h-3 w-3 animate-pulse rounded-full bg-green-400"></div>
             <span className="text-sm">
-              Platform online and ready for exploration
+              Explore your configured property index
             </span>
           </div>
         </div>

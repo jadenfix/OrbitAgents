@@ -26,6 +26,10 @@ from schemas import SearchFilters, PropertyListing, GeoPoint
 logger = logging.getLogger(__name__)
 
 
+class SearchUnavailableError(RuntimeError):
+    """A provider failure must never look like a successful empty result."""
+
+
 class OpenSearchClient:
     """
     OpenSearch client with comprehensive error handling and query building capabilities.
@@ -187,9 +191,7 @@ class OpenSearchClient:
                               sort_order: str = "desc") -> Tuple[List[Dict[str, Any]], int, float]:
         """Search properties with comprehensive filtering and error handling."""
         if not await self.health_check():
-            # Return empty results if OpenSearch unavailable
-            logger.warning("OpenSearch unavailable, returning empty results")
-            return [], 0, 0.0
+            raise SearchUnavailableError("Property index is unavailable")
         
         start_time = time.time()
         
@@ -245,7 +247,7 @@ class OpenSearchClient:
             self.error_count += 1
             query_time = (time.time() - start_time) * 1000
             logger.error(f"Search error after {query_time:.1f}ms: {e}")
-            return [], 0, query_time
+            raise SearchUnavailableError("Property index request failed") from e
     
     def _build_search_query(self, filters: SearchFilters) -> Dict[str, Any]:
         """Build OpenSearch query from search filters."""

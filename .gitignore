@@ -189,3 +189,6 @@ charts/*.lock
 *.sublime-*
 *.code-workspace 
 .vercel
+
+# Reproducible local browser evidence
+artifacts/product-browser/

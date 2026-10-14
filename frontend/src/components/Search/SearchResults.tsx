@@ -5,12 +5,16 @@ interface SearchResultsProps {
   results: PropertyListing[];
   isLoading: boolean;
   total?: number;
+  query?: string;
+  error?: string;
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
   results,
   isLoading,
   total,
+  query,
+  error,
 }) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -59,10 +63,17 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             </svg>
           </div>
           <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No properties found
+            {error
+              ? 'Search unavailable'
+              : query
+                ? 'No properties found'
+                : 'Start your property search'}
           </h3>
           <p className="mt-2 text-sm text-gray-500">
-            Try adjusting your search criteria or search for a different area.
+            {error ||
+              (query
+                ? 'Try adjusting your search criteria or search for a different area.'
+                : 'Enter a city, budget, or bedroom count in the chat. Results come from your configured property index.')}
           </p>
         </div>
       </div>
@@ -86,7 +97,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               className="rounded-lg border border-gray-200 bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
             >
               {/* Header */}
-              <div className="mb-4 flex items-start justify-between">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 className="mb-1 text-lg font-semibold text-gray-900">
                     {listing.title ||

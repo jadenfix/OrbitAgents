@@ -8,8 +8,10 @@ import { SearchProvider } from '../../contexts/SearchContext';
 import { useSearchContext } from '../../contexts/useSearchContext';
 
 const MainContent: React.FC = () => {
-  const { results, isLoading } = useSearchContext();
-  const [view, setView] = useState<'split' | 'list' | 'map'>('split');
+  const { results, isLoading, query, error, total } = useSearchContext();
+  const [view, setView] = useState<'split' | 'list' | 'map'>(() =>
+    window.matchMedia('(min-width: 768px)').matches ? 'split' : 'list'
+  );
 
   const ViewToggle = () => (
     <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-3">
@@ -56,20 +58,22 @@ const MainContent: React.FC = () => {
 
   if (view === 'list') {
     return (
-      <div className="flex h-screen w-full">
+      <div className="flex min-h-screen w-full flex-col md:h-screen md:flex-row">
         {/* Left Panel - Chat Interface */}
-        <div className="flex h-full w-1/3 flex-col border-r border-gray-200 bg-gray-50">
+        <div className="flex h-[55vh] min-h-[360px] w-full flex-col border-r border-gray-200 bg-gray-50 md:h-full md:w-1/3">
           <ChatPanel />
         </div>
 
         {/* Right Panel - List View */}
-        <div className="flex h-full flex-1 flex-col bg-gray-100">
+        <div className="flex min-h-[45vh] min-w-0 flex-1 flex-col bg-gray-100 md:h-full">
           <ViewToggle />
           <div className="flex-1 overflow-hidden">
             <SearchResults
               results={results}
               isLoading={isLoading}
-              total={results.length}
+              total={total}
+              query={query}
+              error={error}
             />
           </div>
         </div>
@@ -79,14 +83,14 @@ const MainContent: React.FC = () => {
 
   if (view === 'map') {
     return (
-      <div className="flex h-screen w-full">
+      <div className="flex min-h-screen w-full flex-col md:h-screen md:flex-row">
         {/* Left Panel - Chat Interface */}
-        <div className="flex h-full w-1/3 flex-col border-r border-gray-200 bg-gray-50">
+        <div className="flex h-[55vh] min-h-[360px] w-full flex-col border-r border-gray-200 bg-gray-50 md:h-full md:w-1/3">
           <ChatPanel />
         </div>
 
         {/* Right Panel - Map View */}
-        <div className="flex h-full flex-1 flex-col bg-gray-100">
+        <div className="flex min-h-[45vh] min-w-0 flex-1 flex-col bg-gray-100 md:h-full">
           <ViewToggle />
           <div className="flex-1">
             <MapPanel />
@@ -98,14 +102,14 @@ const MainContent: React.FC = () => {
 
   // Split view (default)
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex min-h-screen w-full flex-col md:h-screen md:flex-row">
       {/* Left Panel - Chat Interface */}
-      <div className="flex h-full w-1/3 flex-col border-r border-gray-200 bg-gray-50">
+      <div className="flex h-[55vh] min-h-[360px] w-full flex-col border-r border-gray-200 bg-gray-50 md:h-full md:w-1/3">
         <ChatPanel />
       </div>
 
       {/* Right Panel - Split View */}
-      <div className="flex h-full flex-1 flex-col bg-gray-100">
+      <div className="flex min-h-[45vh] min-w-0 flex-1 flex-col bg-gray-100 md:h-full">
         <ViewToggle />
         <div className="flex-1">
           <Allotment vertical defaultSizes={[300, 300]} minSize={200}>
@@ -114,7 +118,9 @@ const MainContent: React.FC = () => {
                 <SearchResults
                   results={results}
                   isLoading={isLoading}
-                  total={results.length}
+                  total={total}
+                  query={query}
+                  error={error}
                 />
               </div>
             </Allotment.Pane>
