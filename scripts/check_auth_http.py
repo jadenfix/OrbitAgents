@@ -66,6 +66,43 @@ def main():
             "email": "http-fixture@example.com",
             "password": temporary_password(),
         }
+        # Two distinct over-budget passwords shared bcrypt's first 72 bytes.
+        # Neither may authenticate, even across the real server/database restart.
+        boundary_password = "".join(
+            secrets.choice(category)
+            for category in (
+                string.ascii_uppercase,
+                string.ascii_lowercase,
+                string.digits,
+                string.punctuation,
+            )
+        ) + secrets.token_urlsafe(51)
+        assert len(boundary_password.encode("utf-8")) == 72
+        boundary_credentials = {
+            "email": "boundary-fixture@example.com",
+            "password": boundary_password,
+        }
+        oversized_passwords = [
+            boundary_password + secrets.token_urlsafe(1),
+            boundary_password + "é",
+        ]
+        assert oversized_passwords[0] != oversized_passwords[1]
+        multibyte_password = (
+            temporary_password()[:4] + "🔐🚀" * 8 + secrets.token_urlsafe(3)
+        )
+        assert len(multibyte_password.encode("utf-8")) == 72
+        assert len(multibyte_password) < 72
+        multibyte_credentials = {
+            "email": "multibyte-fixture@example.com",
+            "password": multibyte_password,
+        }
+        boundary_cases = [
+            (boundary_credentials, oversized_passwords),
+            (
+                multibyte_credentials,
+                [multibyte_password + "é", multibyte_password + "a"],
+            ),
+        ]
         for iteration in range(2):
             with open(Path(temporary) / "server.log", "a+") as log:
                 process = subprocess.Popen(
@@ -98,6 +135,15 @@ def main():
                         raise RuntimeError("Auth HTTP startup timed out")
                     if iteration == 0:
                         assert request("/register", credentials)[0] == 201
+                        for boundary, variants in boundary_cases:
+                            assert request("/register", boundary)[0] == 201
+                            for password in variants:
+                                status, response = request(
+                                    "/register", {**boundary, "password": password}
+                                )
+                                assert status == 422
+                                assert password not in json.dumps(response)
+                                assert boundary["password"] not in json.dumps(response)
                         assert request("/register", credentials)[0] == 400
                         assert (
                             request("/register", {"email": "bad", "password": "short"})[
@@ -105,6 +151,15 @@ def main():
                             ]
                             == 422
                         )
+                    for boundary, variants in boundary_cases:
+                        for password in variants:
+                            status, response = request(
+                                "/login", {**boundary, "password": password}
+                            )
+                            assert status == 422
+                            assert password not in json.dumps(response)
+                            assert boundary["password"] not in json.dumps(response)
+                        assert request("/login", boundary)[0] == 200
                     status, login = request("/login", credentials)
                     assert status == 200, login
                     assert (
@@ -131,8 +186,13 @@ def main():
             ).fetchone()
             assert row[0] == credentials["email"]
             assert row[1] != credentials["password"] and row[1].startswith("$2")
+        server_log = (Path(temporary) / "server.log").read_text()
+        assert credentials["password"] not in server_log
+        for boundary, variants in boundary_cases:
+            assert boundary["password"] not in server_log
+            assert all(password not in server_log for password in variants)
         print(
-            "PASS: real HTTP registration, validation, JWT login, rejected login, hashed SQLite persistence, and restart"
+            "PASS: real HTTP registration, validation, JWT login, rejected login, hashed SQLite persistence, 72-byte shared-prefix rejection, secret-safe errors/logs, and restart"
         )
 
 

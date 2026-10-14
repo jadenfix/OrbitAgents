@@ -8,6 +8,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from passwords import password_bytes
+
 
 class UserCreate(BaseModel):
     """Schema for user registration with comprehensive validation."""
@@ -16,8 +18,8 @@ class UserCreate(BaseModel):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=128,
-        description="User password with strong security requirements",
+        max_length=72,
+        description="Strong password, at most 72 UTF-8 bytes",
     )
 
     @field_validator("email")
@@ -66,8 +68,7 @@ class UserCreate(BaseModel):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
 
-        if len(v) > 128:
-            raise ValueError("Password is too long (maximum 128 characters)")
+        password_bytes(v)
 
         # Check for required character types
         has_upper = any(c.isupper() for c in v)
@@ -100,7 +101,7 @@ class UserCreate(BaseModel):
         return v
 
     model_config = ConfigDict(
-        str_strip_whitespace=True,  # Automatically strip whitespace
+        str_strip_whitespace=False,  # Preserve exact password bytes
         validate_assignment=True,  # Validate on assignment
         json_schema_extra={
             "example": {"email": "user@example.com", "password": "SecurePass123"}
@@ -113,7 +114,7 @@ class UserLogin(BaseModel):
 
     email: EmailStr = Field(..., description="User email address", max_length=254)
     password: str = Field(
-        ..., min_length=1, max_length=128, description="User password"
+        ..., min_length=1, max_length=72, description="Password, at most 72 UTF-8 bytes"
     )
 
     @field_validator("email")
@@ -139,13 +140,12 @@ class UserLogin(BaseModel):
         if not v:
             raise ValueError("Password is required")
 
-        if len(v) > 128:
-            raise ValueError("Password is too long")
+        password_bytes(v)
 
         return v
 
     model_config = ConfigDict(
-        str_strip_whitespace=True,
+        str_strip_whitespace=False,
         json_schema_extra={
             "example": {"email": "user@example.com", "password": "SecurePass123"}
         },

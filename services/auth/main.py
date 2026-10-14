@@ -12,13 +12,14 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 from typing import Optional
 
+import bcrypt
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
-from passlib.context import CryptContext
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import ValidationError
 from sqlalchemy import text
@@ -28,6 +29,7 @@ from sqlalchemy.orm import Session
 from config import settings
 from database import engine, get_db
 from models import Base, User
+from passwords import password_bytes
 from schemas import Token, UserCreate, UserLogin, UserResponse
 
 # Configure logging
@@ -74,12 +76,9 @@ except Exception as e:
     logger.error(f"Failed to configure CORS: {e}")
     raise
 
-# Password hashing with stronger configuration
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=12,  # Increased rounds for better security
-)
+# Matching bcrypt's 12-round cost also for absent users/empty credentials.
+# Use direct maintained bcrypt: Passlib's old backend silently truncated >72 bytes.
+_DUMMY_PASSWORD_HASH = bcrypt.hashpw(b"dummy", bcrypt.gensalt(rounds=12))
 
 # JWT Security
 security = HTTPBearer(auto_error=False)  # Don't auto-error to handle custom responses
@@ -158,25 +157,23 @@ def validate_email_format(email: str) -> bool:
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt with enhanced security."""
-    if not password:
-        raise ValueError("Password cannot be empty")
-    return pwd_context.hash(password)
+    """Hash the entire validated password; never truncate or normalize it."""
+    return bcrypt.hashpw(password_bytes(password), bcrypt.gensalt(rounds=12)).decode(
+        "ascii"
+    )
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash with timing attack protection."""
+    """Check standard legacy/new bcrypt hashes within the exact byte budget."""
     if not plain_password or not hashed_password:
-        # Use a dummy hash to maintain constant time
-        pwd_context.verify(
-            "dummy", "$2b$12$QoB1Icxal9ERFSzRFXGtDuKxW5Y6iavpsAw21T9BhauXmpr.65je2"
-        )
+        bcrypt.checkpw(b"dummy", _DUMMY_PASSWORD_HASH)
         return False
-
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception as e:
-        logger.warning(f"Password verification error: {e}")
+        encoded = password_bytes(plain_password)
+        return bcrypt.checkpw(encoded, hashed_password.encode("ascii"))
+    except (ValueError, TypeError, UnicodeError):
+        # Do not expose submitted passwords or stored hashes through exceptions.
+        logger.warning("Password verification rejected invalid input or hash")
         return False
 
 
@@ -294,14 +291,19 @@ def get_current_user(
         )
 
 
+@app.exception_handler(RequestValidationError)
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(
-    request: Request, exc: ValidationError
+    request: Request, exc: ValidationError | RequestValidationError
 ) -> JSONResponse:
-    """Handle Pydantic validation errors."""
+    """Return useful error locations without raw inputs or exception contexts."""
+    errors = [
+        {key: error[key] for key in ("type", "loc", "msg") if key in error}
+        for error in exc.errors()
+    ]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": "Input validation failed", "errors": exc.errors()},
+        content={"detail": "Input validation failed", "errors": errors},
     )
 
 
@@ -511,10 +513,7 @@ async def login(
             )
         else:
             # Perform dummy password verification to prevent timing attacks
-            verify_password(
-                "dummy_password",
-                "$2b$12$QoB1Icxal9ERFSzRFXGtDuKxW5Y6iavpsAw21T9BhauXmpr.65je2",
-            )
+            bcrypt.checkpw(b"dummy", _DUMMY_PASSWORD_HASH)
 
         if not user or not password_valid:
             LOGIN_ATTEMPTS.labels(status="failed").inc()
