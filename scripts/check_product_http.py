@@ -1,3 +1,4 @@
+import string
 import json, os, secrets, socket, subprocess, sys, tempfile, threading, time, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -137,7 +138,16 @@ try:
                 raise RuntimeError("Startup failed; inspect local logs")
         credentials = {
             "email": "browser-proof@example.com",
-            "password": "Aa9!" + secrets.token_urlsafe(28),
+            "password": "".join(
+                secrets.choice(category)
+                for category in (
+                    string.ascii_uppercase,
+                    string.ascii_lowercase,
+                    string.digits,
+                    string.punctuation,
+                )
+            )
+            + secrets.token_urlsafe(28),
         }
         req = urllib.request.Request(
             f"http://127.0.0.1:{gateway}/api/auth/register",

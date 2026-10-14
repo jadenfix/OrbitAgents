@@ -51,6 +51,10 @@ const { chromium } = require("../frontend/node_modules/playwright");
     await page
       .getByText(/Map unavailable. Listing search remains available/)
       .waitFor();
+    const styled = await page
+      .getByLabel("Property search")
+      .evaluate((el) => getComputedStyle(el).borderRadius !== "0px");
+    if (!styled) throw Error("Tailwind form utilities were not generated");
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,
     );
